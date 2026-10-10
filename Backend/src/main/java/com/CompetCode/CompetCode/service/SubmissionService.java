@@ -67,6 +67,9 @@ public class SubmissionService {
         long totalTime = 0;
 
         for (int i = 0; i < testCases.size(); i++) {
+            if (i > 0) {
+                try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+            }
             TestResultDto result = codeExecutionService.runTestCase(
                     request.getCode(), request.getLanguage(), testCases.get(i), i + 1,
                     problem.getExecutionKey());

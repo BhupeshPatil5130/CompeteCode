@@ -27,7 +27,9 @@ public class CodeExecutionService {
             "js", 63
     );
 
-    @Value("${judge0.api.url:}")
+    private static final String OPEN_JUDGE0_URL = "https://ce.judge0.com";
+
+    @Value("${judge0.api.url:https://ce.judge0.com}")
     private String judge0Url;
 
     @Value("${judge0.api.key:}")
@@ -38,11 +40,6 @@ public class CodeExecutionService {
     public TestResultDto runTestCase(String code, String language, TestCase testCase,
                                      int testNumber, String executionKey) {
         long start = System.currentTimeMillis();
-
-        if (judge0Url == null || judge0Url.isBlank()) {
-            return failedResult(testCase, testNumber, start,
-                    "Code execution unavailable. Configure JUDGE0_URL.");
-        }
 
         try {
             Integer languageId = LANGUAGE_IDS.get(language.toLowerCase());
@@ -56,28 +53,13 @@ public class CodeExecutionService {
                         "No execution wrapper for this problem. Set executionKey on the problem.");
             }
 
-            RestClient client = RestClient.create();
             Map<String, Object> submission = new HashMap<>();
             submission.put("source_code", preparedCode);
             submission.put("language_id", languageId);
             submission.put("stdin", testCase.getInput());
             submission.put("expected_output", testCase.getExpectedOutput());
 
-            var request = client.post()
-                    .uri(judge0Url + "/submissions?base64_encoded=false&wait=true")
-                    .header("Content-Type", "application/json");
-
-            if (judge0Key != null && !judge0Key.isBlank()) {
-                if (judge0Url.contains("rapidapi.com")) {
-                    request = request.header("X-RapidAPI-Key", judge0Key)
-                                     .header("X-RapidAPI-Host", "judge0-ce.p.rapidapi.com");
-                } else {
-                    request = request.header("X-Auth-Token", judge0Key);
-                }
-            }
-
-            String response = request.body(submission).retrieve().body(String.class);
-            var node = objectMapper.readTree(response);
+            var node = executeSubmission(submission);
 
             String status = node.path("status").path("description").asText("");
             String stdout = node.path("stdout").asText("").trim();
@@ -109,14 +91,6 @@ public class CodeExecutionService {
     public RunCodeResponse runRawCode(String code, String language, String stdin) {
         long start = System.currentTimeMillis();
 
-        if (judge0Url == null || judge0Url.isBlank()) {
-            return RunCodeResponse.builder()
-                    .statusDescription("Internal Error")
-                    .stderr("Code execution unavailable. Configure JUDGE0_URL.")
-                    .time(0.0)
-                    .build();
-        }
-
         try {
             Integer languageId = LANGUAGE_IDS.get(language.toLowerCase());
             if (languageId == null) {
@@ -133,7 +107,6 @@ public class CodeExecutionService {
                 finalCode = wrapJavaWithGenericMain(code);
             }
 
-            RestClient client = RestClient.create();
             Map<String, Object> submission = new HashMap<>();
             submission.put("source_code", finalCode);
             submission.put("language_id", languageId);
@@ -141,21 +114,7 @@ public class CodeExecutionService {
                 submission.put("stdin", stdin);
             }
 
-            var request = client.post()
-                    .uri(judge0Url + "/submissions?base64_encoded=false&wait=true")
-                    .header("Content-Type", "application/json");
-
-            if (judge0Key != null && !judge0Key.isBlank()) {
-                if (judge0Url.contains("rapidapi.com")) {
-                    request = request.header("X-RapidAPI-Key", judge0Key)
-                                     .header("X-RapidAPI-Host", "judge0-ce.p.rapidapi.com");
-                } else {
-                    request = request.header("X-Auth-Token", judge0Key);
-                }
-            }
-
-            String response = request.body(submission).retrieve().body(String.class);
-            var node = objectMapper.readTree(response);
+            var node = executeSubmission(submission);
 
             return RunCodeResponse.builder()
                     .stdout(node.path("stdout").asText(""))
@@ -174,6 +133,55 @@ public class CodeExecutionService {
                     .time((double)(System.currentTimeMillis() - start) / 1000.0)
                     .build();
         }
+    }
+
+    /**
+     * Executes a submission against Judge0.
+     * Automatically falls back to the open public Judge0 Community Edition (https://ce.judge0.com)
+     * if the configured URL fails with 403 (unsubscribed), 401, or 429 rate limit.
+     */
+    private com.fasterxml.jackson.databind.JsonNode executeSubmission(Map<String, Object> submission) throws Exception {
+        String primaryUrl = (judge0Url == null || judge0Url.isBlank()) ? OPEN_JUDGE0_URL : judge0Url.trim();
+        boolean isPlaceholderKey = judge0Key == null
+                || judge0Key.isBlank()
+                || judge0Key.toLowerCase().contains("your_")
+                || judge0Key.equalsIgnoreCase("dummy");
+
+        // If configured with RapidAPI without a valid key, skip straight to open CE instance
+        if (primaryUrl.contains("rapidapi.com") && isPlaceholderKey) {
+            primaryUrl = OPEN_JUDGE0_URL;
+        }
+
+        try {
+            return doJudge0Post(primaryUrl, submission, primaryUrl.equals(OPEN_JUDGE0_URL) ? null : judge0Key);
+        } catch (Exception ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            // If primary failed due to subscription (403), auth (401), or rate limit (429), fallback to open CE
+            if (!primaryUrl.equals(OPEN_JUDGE0_URL) && (msg.contains("403") || msg.contains("401") || msg.contains("429") || msg.contains("not subscribed"))) {
+                log.warn("Judge0 call to {} failed ({}), retrying on public open instance {}", primaryUrl, msg, OPEN_JUDGE0_URL);
+                return doJudge0Post(OPEN_JUDGE0_URL, submission, null);
+            }
+            throw ex;
+        }
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode doJudge0Post(String baseUrl, Map<String, Object> submission, String key) throws Exception {
+        RestClient client = RestClient.create();
+        var request = client.post()
+                .uri(baseUrl + "/submissions?base64_encoded=false&wait=true")
+                .header("Content-Type", "application/json");
+
+        if (key != null && !key.isBlank() && !key.toLowerCase().contains("your_")) {
+            if (baseUrl.contains("rapidapi.com")) {
+                request = request.header("X-RapidAPI-Key", key)
+                                 .header("X-RapidAPI-Host", "judge0-ce.p.rapidapi.com");
+            } else {
+                request = request.header("X-Auth-Token", key);
+            }
+        }
+
+        String response = request.body(submission).retrieve().body(String.class);
+        return objectMapper.readTree(response);
     }
 
     private String prepareSourceCode(String code, String language, String executionKey) {
