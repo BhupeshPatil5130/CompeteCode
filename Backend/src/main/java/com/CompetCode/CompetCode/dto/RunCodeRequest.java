@@ -1,9 +1,15 @@
 package com.CompetCode.CompetCode.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
-public record RunCodeRequest(
-        @NotBlank String code,
-        @NotBlank String language,
-        String stdin
-) {}
+@Data
+public class RunCodeRequest {
+    @NotBlank
+    private String code;
+    
+    @NotBlank
+    private String language;
+
+    private String stdin;
+}

@@ -1,10 +1,19 @@
 package com.CompetCode.CompetCode.dto;
 
-public record AnimationStep(
-        int step,
-        String title,
-        String description,
-        String visualType,
-        String visualData,
-        int durationMs
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AnimationStep {
+    private int step;
+    private String title;
+    private String description;
+    private String visualType;
+    private String visualData;
+    private int durationMs;
+}

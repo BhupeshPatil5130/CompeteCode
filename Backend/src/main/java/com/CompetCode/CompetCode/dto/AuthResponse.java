@@ -1,10 +1,17 @@
 package com.CompetCode.CompetCode.dto;
 
-public record AuthResponse(
-        String token,
-        String refreshToken,
-        Long userId,
-        String username,
-        String email,
-        Integer rating
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+@AllArgsConstructor
+public class AuthResponse {
+    private String token;
+    private String refreshToken;
+    private Long userId;
+    private String username;
+    private String email;
+    private Integer rating;
+}

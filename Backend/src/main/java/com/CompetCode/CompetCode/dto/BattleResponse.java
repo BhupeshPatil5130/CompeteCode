@@ -4,46 +4,53 @@ import com.CompetCode.CompetCode.entity.Battle;
 import com.CompetCode.CompetCode.entity.BattleMode;
 import com.CompetCode.CompetCode.entity.BattleStatus;
 import com.CompetCode.CompetCode.entity.Problem;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
 
-public record BattleResponse(
-        Long id,
-        String roomCode,
-        List<Problem> problems,
-        UserSummaryDto host,
-        BattleStatus status,
-        BattleMode battleMode,
-        Integer durationMinutes,
-        Integer maxParticipants,
-        Integer teamsCount,
-        Integer teamSize,
-        Integer participantCount,
-        Instant startedAt,
-        Instant endsAt,
-        Instant completedAt,
-        Instant createdAt,
-        List<BattleTeamResponse> teams
-) {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BattleResponse {
+    private Long id;
+    private String roomCode;
+    private List<Problem> problems;
+    private UserSummaryDto host;
+    private BattleStatus status;
+    private BattleMode battleMode;
+    private Integer durationMinutes;
+    private Integer maxParticipants;
+    private Integer teamsCount;
+    private Integer teamSize;
+    private Integer participantCount;
+    private Instant startedAt;
+    private Instant endsAt;
+    private Instant completedAt;
+    private Instant createdAt;
+    private List<BattleTeamResponse> teams;
+
     public static BattleResponse from(Battle battle, int participantCount) {
-        return new BattleResponse(
-                battle.getId(),
-                battle.getRoomCode(),
-                battle.getProblems(),
-                UserSummaryDto.from(battle.getHost()),
-                battle.getStatus(),
-                battle.getBattleMode(),
-                battle.getDurationMinutes(),
-                battle.getMaxParticipants(),
-                battle.getTeamsCount(),
-                battle.getTeamSize(),
-                participantCount,
-                battle.getStartedAt(),
-                battle.getEndsAt(),
-                battle.getCompletedAt(),
-                battle.getCreatedAt(),
-                null
-        );
+        return BattleResponse.builder()
+                .id(battle.getId())
+                .roomCode(battle.getRoomCode())
+                .problems(battle.getProblems())
+                .host(UserSummaryDto.from(battle.getHost()))
+                .status(battle.getStatus())
+                .battleMode(battle.getBattleMode())
+                .durationMinutes(battle.getDurationMinutes())
+                .maxParticipants(battle.getMaxParticipants())
+                .teamsCount(battle.getTeamsCount())
+                .teamSize(battle.getTeamSize())
+                .participantCount(participantCount)
+                .startedAt(battle.getStartedAt())
+                .endsAt(battle.getEndsAt())
+                .completedAt(battle.getCompletedAt())
+                .createdAt(battle.getCreatedAt())
+                .build();
     }
 }

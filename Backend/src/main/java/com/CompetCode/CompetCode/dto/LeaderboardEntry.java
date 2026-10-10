@@ -1,10 +1,19 @@
 package com.CompetCode.CompetCode.dto;
 
-public record LeaderboardEntry(
-        Long userId,
-        String username,
-        Integer rating,
-        Integer problemsSolved,
-        Integer battlesWon,
-        Integer rank
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class LeaderboardEntry {
+    private Long userId;
+    private String username;
+    private Integer rating;
+    private Integer problemsSolved;
+    private Integer battlesWon;
+    private Integer rank;
+}

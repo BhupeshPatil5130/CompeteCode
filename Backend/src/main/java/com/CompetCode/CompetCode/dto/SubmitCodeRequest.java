@@ -2,10 +2,15 @@ package com.CompetCode.CompetCode.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-public record SubmitCodeRequest(
-        @NotNull Long problemId,
-        @NotBlank String code,
-        @NotBlank String language,
-        Long battleId
-) {}
+@Data
+public class SubmitCodeRequest {
+    @NotNull
+    private Long problemId;
+    @NotBlank
+    private String code;
+    @NotBlank
+    private String language;
+    private Long battleId;
+}

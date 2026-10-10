@@ -1,11 +1,16 @@
 package com.CompetCode.CompetCode.dto;
 
-public record RunCodeResponse(
-        String stdout,
-        String stderr,
-        String compileOutput,
-        int statusId,
-        String statusDescription,
-        Double time,
-        Integer memory
-) {}
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class RunCodeResponse {
+    private String stdout;
+    private String stderr;
+    private String compileOutput;
+    private int statusId;
+    private String statusDescription;
+    private Double time;
+    private Integer memory;
+}

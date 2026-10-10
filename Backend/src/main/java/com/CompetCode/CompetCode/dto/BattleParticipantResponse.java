@@ -1,11 +1,20 @@
 package com.CompetCode.CompetCode.dto;
 
-public record BattleParticipantResponse(
-        Long userId,
-        String username,
-        Integer score,
-        Integer rank,
-        Long teamId,
-        String teamName,
-        String teamColor
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BattleParticipantResponse {
+    private Long userId;
+    private String username;
+    private Integer score;
+    private Integer rank;
+    private Long teamId;
+    private String teamName;
+    private String teamColor;
+}
