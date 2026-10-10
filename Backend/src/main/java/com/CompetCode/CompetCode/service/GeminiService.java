@@ -103,8 +103,8 @@ public class GeminiService {
                 6. "highlights" must be the 0-based indices currently being examined or compared (e.g. [0] or [0, 1]).
                 7. "codeLines" must point to the 1-based line number(s) in "code" executing at that step.
                 8. Include "code" in step 1 — provide the clean optimal algorithm in pseudocode or Java.
-                9. Generate one step per meaningful operation in the algorithm (loop iteration, comparison, hash map insert, pointer move, swap).
-                10. Generate 6 to 12 steps total — enough to show the COMPLETE trace to the final answer.
+                9. Generate one step per meaningful operation in the algorithm (loop iteration, condition check, hash map insert, pointer move, swap).
+                10. Generate a FULL, COMPREHENSIVE DRY-RUN (typically 8 to 20 detailed steps) covering EVERY single iteration and state change from beginning to termination. Do NOT skip iterations. Do NOT summarize into only 2-3 steps. The user expects the entire algorithm execution completely animated step by step.
                 11. End with a step showing the final result/return value with the answer indices highlighted.
 
                 visualType rules:
@@ -423,94 +423,71 @@ public class GeminiService {
             "}"
         );
 
-        List<AnimationStep> steps = new ArrayList<>();
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Invariants & Map")
+                .description("Initialize empty hash map to store visited elements and indices. Target is 9.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 0)).highlights(List.of())
+                .vars(Map.of("target", "9", "map", "{}", "i", "0")).codeLines(List.of(1, 2)).code(code).durationMs(2500).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(1)
-            .title("1. Initialize Hash Map")
-            .description("Initialize an empty hash map to store seen values and their indices for O(1) complement lookup.")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .pointers(Map.of("i", 0))
-            .highlights(List.of(0))
-            .vars(Map.of("target", "9", "i", "0", "map", "{}"))
-            .codeLines(List.of(1, 2))
-            .code(code)
-            .durationMs(2500)
-            .build());
+            AnimationStep.builder().step(2).title("2. Loop Iteration i = 0 (nums[0] = 2)")
+                .description("Begin loop at index 0. Current element nums[0] is 2.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("i", "0", "nums[i]", "2", "target", "9", "map", "{}")).codeLines(List.of(3)).code(code).durationMs(2200).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(2)
-            .title("2. Inspect nums[0] = 2")
-            .description("Calculate complement: target - nums[0] = 9 - 2 = 7. Look up 7 in the map -> Not found.")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .pointers(Map.of("i", 0))
-            .highlights(List.of(0))
-            .vars(Map.of("nums[0]", "2", "complement", "7", "inMap", "false", "map", "{}"))
-            .codeLines(List.of(3, 4, 5))
-            .code(code)
-            .durationMs(2500)
-            .build());
+            AnimationStep.builder().step(3).title("3. Compute Complement (9 - 2 = 7)")
+                .description("Calculate complement: target - nums[0] = 9 - 2 = 7.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("i", "0", "nums[i]", "2", "complement", "7", "target", "9")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(3)
-            .title("3. Insert into Hash Map")
-            .description("Store current number and index: map.put(2, 0).")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .pointers(Map.of("i", 0))
-            .highlights(List.of(0))
-            .vars(Map.of("nums[0]", "2", "map", "{2: 0}"))
-            .codeLines(List.of(8))
-            .code(code)
-            .durationMs(2500)
-            .build());
+            AnimationStep.builder().step(4).title("4. Map Check: map.containsKey(7)")
+                .description("Look up complement 7 in hash map -> FALSE (not yet seen).")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("complement", "7", "inMap", "false", "map", "{}")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(4)
-            .title("4. Move to nums[1] = 7")
-            .description("Advance i = 1 (value 7). Calculate complement: target - nums[1] = 9 - 7 = 2.")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .pointers(Map.of("i", 1))
-            .highlights(List.of(1))
-            .vars(Map.of("nums[1]", "7", "complement", "2", "map", "{2: 0}"))
-            .codeLines(List.of(3, 4))
-            .code(code)
-            .durationMs(2500)
-            .build());
+            AnimationStep.builder().step(5).title("5. Insert Entry: map.put(2, 0)")
+                .description("Save visited element and index: map.put(2, 0). Hash map now contains {2: 0}.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("inserted", "2 -> 0", "map", "{2: 0}")).codeLines(List.of(8)).code(code).durationMs(2200).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(5)
-            .title("5. Complement Found in Map!")
-            .description("Search 2 in hash map -> MATCH FOUND at index 0! Complement pair (2 + 7 = 9) located.")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .pointers(Map.of("i", 1))
-            .highlights(List.of(0, 1))
-            .vars(Map.of("foundIndex", "0", "currentIndex", "1", "map", "{2: 0}"))
-            .codeLines(List.of(5, 6))
-            .code(code)
-            .durationMs(3000)
-            .build());
+            AnimationStep.builder().step(6).title("6. Advance Loop to i = 1 (nums[1] = 7)")
+                .description("Increment loop index i = 1. Inspect next element nums[1] = 7.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 1)).highlights(List.of(1))
+                .vars(Map.of("i", "1", "nums[1]", "7", "target", "9", "map", "{2: 0}")).codeLines(List.of(3)).code(code).durationMs(2200).build(),
 
-        steps.add(AnimationStep.builder()
-            .step(6)
-            .title("6. Return Result [0, 1]")
-            .description("Return indices [0, 1] as the final solution. Time Complexity: O(N), Space: O(N).")
-            .visualType("array")
-            .visualData("[2, 7, 11, 15]")
-            .highlights(List.of(0, 1))
-            .vars(Map.of("result", "[0, 1]", "status", "SUCCESS", "map", "{2: 0}"))
-            .codeLines(List.of(6))
-            .code(code)
-            .durationMs(3000)
-            .build());
+            AnimationStep.builder().step(7).title("7. Compute Complement (9 - 7 = 2)")
+                .description("Calculate complement: target - nums[1] = 9 - 7 = 2.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 1)).highlights(List.of(1))
+                .vars(Map.of("i", "1", "nums[1]", "7", "complement", "2", "map", "{2: 0}")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(8).title("8. Map Check: map.containsKey(2) - HIT!")
+                .description("Look up complement 2 in hash map -> MATCH FOUND! Key 2 exists in map.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 1)).highlights(List.of(0, 1))
+                .vars(Map.of("complement", "2", "inMap", "true", "map", "{2: 0}")).codeLines(List.of(5)).code(code).durationMs(2500).build(),
+
+            AnimationStep.builder().step(9).title("9. Retrieve Index: map.get(2) = 0")
+                .description("Retrieve index 0 of complement. Pair is indices [0, 1] with values 2 + 7 = 9.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .pointers(Map.of("i", 1)).highlights(List.of(0, 1))
+                .vars(Map.of("prevIndex", "0", "currentIndex", "1", "pair", "[0, 1]", "map", "{2: 0}")).codeLines(List.of(6)).code(code).durationMs(2500).build(),
+
+            AnimationStep.builder().step(10).title("10. Return Solution [0, 1]")
+                .description("Return indices [0, 1]. Complete dry run finished in O(N) time and O(N) space.")
+                .visualType("array").visualData("[2, 7, 11, 15]")
+                .highlights(List.of(0, 1))
+                .vars(Map.of("result", "[0, 1]", "status", "SUCCESS", "time", "O(N)", "space", "O(N)")).codeLines(List.of(6)).code(code).durationMs(3000).build()
+        );
 
         return AnimatedExplanationResponse.builder()
             .problemTitle(problem.getTitle())
-            .summary("One-pass Hash Map lookup achieving optimal O(N) time.")
+            .summary("Full one-pass Hash Map lookup achieving optimal O(N) time.")
             .exampleInput("nums = [2, 7, 11, 15], target = 9")
             .exampleOutput("[0, 1]")
             .steps(steps)
@@ -534,31 +511,65 @@ public class GeminiService {
         );
 
         List<AnimationStep> steps = List.of(
-            AnimationStep.builder().step(1).title("1. Initialize Pointers")
-                .description("Place 'left' pointer at index 0 and 'right' pointer at the last index.")
+            AnimationStep.builder().step(1).title("1. Initialize Boundary Pointers")
+                .description("Place left pointer at 0 (height 1) and right pointer at 8 (height 7). maxArea = 0.")
                 .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
                 .pointers(Map.of("left", 0, "right", 8)).highlights(List.of(0, 8))
-                .vars(Map.of("left", "0", "right", "8", "maxArea", "0")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(2).title("2. Calculate Area for (0, 8)")
-                .description("width = 8 - 0 = 8, h = min(1, 7) = 1. Area = 8 * 1 = 8. Update maxArea to 8.")
+                .vars(Map.of("left", "0", "right", "8", "maxArea", "0")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Iteration 1: Compute Area for (0, 8)")
+                .description("width = 8 - 0 = 8, h = min(1, 7) = 1. area = 8 * 1 = 8. Update maxArea = 8.")
                 .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
                 .pointers(Map.of("left", 0, "right", 8)).highlights(List.of(0, 8))
-                .vars(Map.of("width", "8", "minHeight", "1", "currentArea", "8", "maxArea", "8")).codeLines(List.of(4, 5, 6, 7)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(3).title("3. Move Left Pointer Inward")
-                .description("Since height[left] (1) < height[right] (7), increment left to index 1.")
+                .vars(Map.of("width", "8", "minHeight", "1", "area", "8", "maxArea", "8")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Advance Shorter Boundary (left)")
+                .description("height[0] (1) < height[8] (7). Increment left from 0 to 1.")
                 .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
                 .pointers(Map.of("left", 1, "right", 8)).highlights(List.of(1, 8))
-                .vars(Map.of("left", "1", "right", "8", "maxArea", "8")).codeLines(List.of(8)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(4).title("4. Calculate Area for (1, 8)")
-                .description("width = 8 - 1 = 7, h = min(8, 7) = 7. Area = 7 * 7 = 49. maxArea updated to 49!")
+                .vars(Map.of("left", "1", "right", "8", "maxArea", "8")).codeLines(List.of(8)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. Iteration 2: Compute Area for (1, 8)")
+                .description("width = 8 - 1 = 7, h = min(8, 7) = 7. area = 7 * 7 = 49!")
                 .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
                 .pointers(Map.of("left", 1, "right", 8)).highlights(List.of(1, 8))
-                .vars(Map.of("width", "7", "minHeight", "7", "currentArea", "49", "maxArea", "49")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(5).title("5. Return Maximum Area (49)")
-                .description("Optimal container found. Return maxArea = 49.")
+                .vars(Map.of("width", "7", "minHeight", "7", "area", "49", "maxArea", "8")).codeLines(List.of(5, 6)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. Update Maximum Area: maxArea = 49")
+                .description("New best area! maxArea = max(8, 49) = 49.")
                 .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
                 .pointers(Map.of("left", 1, "right", 8)).highlights(List.of(1, 8))
-                .vars(Map.of("maxArea", "49", "status", "OPTIMAL")).codeLines(List.of(11)).code(code).durationMs(2500).build()
+                .vars(Map.of("maxArea", "49", "status", "NEW_MAX")).codeLines(List.of(7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Decrement Shorter Boundary (right)")
+                .description("height[8] (7) <= height[1] (8). Decrement right from 8 to 7.")
+                .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
+                .pointers(Map.of("left", 1, "right", 7)).highlights(List.of(1, 7))
+                .vars(Map.of("left", "1", "right", "7", "maxArea", "49")).codeLines(List.of(9)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Iteration 3: Check (1, 7)")
+                .description("width = 7 - 1 = 6, h = min(8, 3) = 3. area = 18 < 49. maxArea remains 49.")
+                .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
+                .pointers(Map.of("left", 1, "right", 7)).highlights(List.of(1, 7))
+                .vars(Map.of("width", "6", "minHeight", "3", "area", "18", "maxArea", "49")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(8).title("8. Decrement Shorter Boundary to index 6")
+                .description("height[7] (3) < height[1] (8). Decrement right from 7 to 6.")
+                .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
+                .pointers(Map.of("left", 1, "right", 6)).highlights(List.of(1, 6))
+                .vars(Map.of("left", "1", "right", "6", "maxArea", "49")).codeLines(List.of(9)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(9).title("9. Iteration 4: Check (1, 6)")
+                .description("width = 6 - 1 = 5, h = min(8, 8) = 8. area = 5 * 8 = 40 < 49. maxArea remains 49.")
+                .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
+                .pointers(Map.of("left", 1, "right", 6)).highlights(List.of(1, 6))
+                .vars(Map.of("width", "5", "minHeight", "8", "area", "40", "maxArea", "49")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(10).title("10. Termination & Return maxArea = 49")
+                .description("All remaining windows yield smaller widths. Optimal capacity is 49. Complete in O(N) time and O(1) space.")
+                .visualType("two-pointer").visualData("[1, 8, 6, 2, 5, 4, 8, 3, 7]")
+                .pointers(Map.of("left", 1, "right", 8)).highlights(List.of(1, 8))
+                .vars(Map.of("maxArea", "49", "time", "O(N)", "space", "O(1)", "status", "OPTIMAL")).codeLines(List.of(11)).code(code).durationMs(3000).build()
         );
 
         return AnimatedExplanationResponse.builder()
@@ -581,22 +592,50 @@ public class GeminiService {
         );
 
         List<AnimationStep> steps = List.of(
-            AnimationStep.builder().step(1).title("1. Inspect Root Node")
-                .description("Start DFS from root node 3.")
+            AnimationStep.builder().step(1).title("1. Inspect Root Node (3)")
+                .description("Start DFS from root node 3. root != null, proceed to recurse on subtrees.")
                 .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
-                .vars(Map.of("node", "3", "depth", "1")).codeLines(List.of(1, 2)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(2).title("2. Traverse Left Subtree")
-                .description("Recursively explore left child (node 9).")
+                .vars(Map.of("node", "3", "call", "maxDepth(3)")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Recurse Left Subtree: maxDepth(9)")
+                .description("Traverse into left child node 9.")
                 .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
-                .vars(Map.of("node", "9", "leftDepth", "1")).codeLines(List.of(3)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(3).title("3. Traverse Right Subtree")
-                .description("Recursively explore right child (node 20) and its children 15 and 7.")
+                .vars(Map.of("node", "9", "parent", "3")).codeLines(List.of(3)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Node 9 Checks Leaves (Null Children)")
+                .description("Node 9 has 9.left == null (0) and 9.right == null (0).")
                 .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
-                .vars(Map.of("node", "20", "rightDepth", "2")).codeLines(List.of(4)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(4).title("4. Return Max Depth (3)")
-                .description("1 + max(left, right) = 1 + 2 = 3.")
+                .vars(Map.of("node", "9", "left", "0", "right", "0")).codeLines(List.of(2, 3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. Node 9 Returns Depth 1")
+                .description("1 + max(0, 0) = 1. Return leftDepth = 1 to root node 3.")
                 .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
-                .vars(Map.of("maxDepth", "3")).codeLines(List.of(5)).code(code).durationMs(2500).build()
+                .vars(Map.of("node", "9", "depth", "1", "returningTo", "3")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. Recurse Right Subtree: maxDepth(20)")
+                .description("Traverse into right child node 20.")
+                .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
+                .vars(Map.of("node", "20", "leftDepthDone", "1")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Node 20 Recurses Left: maxDepth(15)")
+                .description("Explore child 15. Leaf node returns depth 1.")
+                .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
+                .vars(Map.of("node", "15", "depth", "1")).codeLines(List.of(3, 5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Node 20 Recurses Right: maxDepth(7)")
+                .description("Explore child 7. Leaf node returns depth 1.")
+                .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
+                .vars(Map.of("node", "7", "depth", "1")).codeLines(List.of(4, 5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(8).title("8. Node 20 Returns Depth 2")
+                .description("1 + max(15Depth=1, 7Depth=1) = 2. Return rightDepth = 2 to root node 3.")
+                .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
+                .vars(Map.of("node", "20", "depth", "2", "returningTo", "3")).codeLines(List.of(5)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(9).title("9. Root Calculates Final Depth = 3")
+                .description("Root computes: 1 + max(left=1, right=2) = 3. Return maxDepth = 3.")
+                .visualType("tree").visualData("[\"3\",\"9\",\"20\",\"null\",\"null\",\"15\",\"7\"]")
+                .vars(Map.of("root", "3", "leftDepth", "1", "rightDepth", "2", "maxDepth", "3", "status", "COMPLETE")).codeLines(List.of(5)).code(code).durationMs(3000).build()
         );
 
         return AnimatedExplanationResponse.builder()
@@ -623,18 +662,55 @@ public class GeminiService {
         );
 
         List<AnimationStep> steps = List.of(
-            AnimationStep.builder().step(1).title("1. Initialize Pointers")
-                .description("prev = null, curr = head (value 1).")
+            AnimationStep.builder().step(1).title("1. Initialize Pointer Invariants")
+                .description("Initialize prev = null, curr = head (value 1).")
                 .visualType("linkedlist").visualData("[\"1\",\"2\",\"3\",\"4\"]")
-                .vars(Map.of("prev", "null", "curr", "1")).codeLines(List.of(1, 2)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(2).title("2. Rewire First Node")
-                .description("curr.next = prev (1 -> null). Advance prev to 1 and curr to 2.")
+                .vars(Map.of("prev", "null", "curr", "1")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Iteration 1: Save next = 2")
+                .description("Save reference to rest of list: next = curr.next (node 2).")
+                .visualType("linkedlist").visualData("[\"1\",\"2\",\"3\",\"4\"]")
+                .vars(Map.of("curr", "1", "next", "2", "prev", "null")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Iteration 1: Reverse Link (1 -> null)")
+                .description("Invert pointer: curr.next = prev. Node 1 now points to null.")
+                .visualType("linkedlist").visualData("[\"1\"]")
+                .vars(Map.of("reversed", "1 -> null", "next", "2")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. Iteration 1: Advance Pointers (prev=1, curr=2)")
+                .description("Shift pointers forward: prev = 1, curr = 2.")
                 .visualType("linkedlist").visualData("[\"2\",\"3\",\"4\"]")
-                .vars(Map.of("prev", "1", "curr", "2")).codeLines(List.of(3, 4, 5, 6, 7)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(3).title("3. Complete Reversal")
-                .description("Continue until curr is null. Return new head (prev).")
+                .vars(Map.of("prev", "1", "curr", "2")).codeLines(List.of(6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. Iteration 2: Rewire Node 2 (2 -> 1)")
+                .description("Save next = 3. Point curr.next = prev (2 -> 1). Advance prev = 2, curr = 3.")
+                .visualType("linkedlist").visualData("[\"2\",\"1\"]")
+                .vars(Map.of("prev", "2", "curr", "3", "next", "3")).codeLines(List.of(4, 5, 6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Iteration 3: Rewire Node 3 (3 -> 2)")
+                .description("Save next = 4. Point curr.next = prev (3 -> 2). Advance prev = 3, curr = 4.")
+                .visualType("linkedlist").visualData("[\"3\",\"2\",\"1\"]")
+                .vars(Map.of("prev", "3", "curr", "4", "next", "4")).codeLines(List.of(4, 5, 6, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Iteration 4: Save next = null")
+                .description("Current node is 4. Next node is null (end of input list).")
+                .visualType("linkedlist").visualData("[\"4\"]")
+                .vars(Map.of("curr", "4", "next", "null", "prev", "3")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(8).title("8. Iteration 4: Rewire Last Node (4 -> 3)")
+                .description("Invert pointer: curr.next = prev (4 -> 3).")
                 .visualType("linkedlist").visualData("[\"4\",\"3\",\"2\",\"1\"]")
-                .vars(Map.of("newHead", "4", "status", "COMPLETE")).codeLines(List.of(9)).code(code).durationMs(2500).build()
+                .vars(Map.of("reversed", "4 -> 3", "prev", "3")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(9).title("9. Iteration 4: Advance (prev=4, curr=null)")
+                .description("Shift pointers: prev = 4, curr = null. while condition (curr != null) becomes false.")
+                .visualType("linkedlist").visualData("[\"4\",\"3\",\"2\",\"1\"]")
+                .vars(Map.of("prev", "4", "curr", "null", "loopTerminated", "true")).codeLines(List.of(6, 7, 3)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(10).title("10. Return New Head (Node 4)")
+                .description("Return prev as new head. List successfully reversed: [4, 3, 2, 1] in O(N) time and O(1) space.")
+                .visualType("linkedlist").visualData("[\"4\",\"3\",\"2\",\"1\"]")
+                .vars(Map.of("head", "4", "status", "SUCCESS", "time", "O(N)", "space", "O(1)")).codeLines(List.of(9)).code(code).durationMs(3000).build()
         );
 
         return AnimatedExplanationResponse.builder()
@@ -660,18 +736,45 @@ public class GeminiService {
         );
 
         List<AnimationStep> steps = List.of(
-            AnimationStep.builder().step(1).title("1. Inspect Grid Dimensions")
-                .description("Iterate through rows and columns searching for unvisited land ('1').")
+            AnimationStep.builder().step(1).title("1. Initialize Grid Scan")
+                .description("Initialize count = 0. Begin scanning grid rows and columns looking for unvisited land ('1').")
                 .visualType("matrix").visualData("[[1,1,0],[1,0,0],[0,0,1]]")
-                .vars(Map.of("r", "0", "c", "0", "islands", "0")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(2).title("2. Discover Island and Sink")
-                .description("Found land at (0, 0)! Increment island count and sink connected land.")
+                .vars(Map.of("r", "0", "c", "0", "count", "0")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Discover Island 1 at (0, 0)")
+                .description("Cell (0, 0) == '1'. Increment count = 1. Launch DFS to sink entire island.")
+                .visualType("matrix").visualData("[[1,1,0],[1,0,0],[0,0,1]]")
+                .vars(Map.of("r", "0", "c", "0", "count", "1", "event", "NEW_ISLAND")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. DFS Sinks Cell (0, 0)")
+                .description("Sink root cell: grid[0][0] = '0'. Recursively visit adjacent land neighbors.")
+                .visualType("matrix").visualData("[[0,1,0],[1,0,0],[0,0,1]]")
+                .vars(Map.of("sunk", "(0, 0)", "count", "1")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. DFS Sinks Neighbor (0, 1)")
+                .description("Visit right neighbor: grid[0][1] == '1' -> sunk to '0'.")
+                .visualType("matrix").visualData("[[0,0,0],[1,0,0],[0,0,1]]")
+                .vars(Map.of("sunk", "(0, 1)", "count", "1")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. DFS Sinks Neighbor (1, 0)")
+                .description("Visit down neighbor: grid[1][0] == '1' -> sunk to '0'. First island completely explored.")
                 .visualType("matrix").visualData("[[0,0,0],[0,0,0],[0,0,1]]")
-                .vars(Map.of("r", "0", "c", "0", "islands", "1")).codeLines(List.of(5)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(3).title("3. Final Count")
-                .description("Complete scan of matrix. Found 2 distinct islands.")
+                .vars(Map.of("sunk", "(1, 0)", "island1", "CLEARED")).codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Scan Traverses Water Cells")
+                .description("Loops continue scanning through cells (1, 1), (1, 2), (2, 0), (2, 1). All are water ('0').")
+                .visualType("matrix").visualData("[[0,0,0],[0,0,0],[0,0,1]]")
+                .vars(Map.of("r", "2", "c", "1", "count", "1")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Discover Island 2 at (2, 2)")
+                .description("Cell (2, 2) == '1'. Found distinct second island! Increment count = 2. DFS sinks (2, 2) to '0'.")
                 .visualType("matrix").visualData("[[0,0,0],[0,0,0],[0,0,0]]")
-                .vars(Map.of("totalIslands", "2")).codeLines(List.of(8)).code(code).durationMs(2500).build()
+                .vars(Map.of("r", "2", "c", "2", "count", "2", "event", "NEW_ISLAND")).codeLines(List.of(5)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(8).title("8. Complete Scan & Return count = 2")
+                .description("Finished full matrix traversal in O(R*C) time. Total islands identified: 2.")
+                .visualType("matrix").visualData("[[0,0,0],[0,0,0],[0,0,0]]")
+                .vars(Map.of("totalIslands", "2", "status", "COMPLETE", "time", "O(R*C)")).codeLines(List.of(8)).code(code).durationMs(3000).build()
         );
 
         return AnimatedExplanationResponse.builder()
@@ -695,21 +798,53 @@ public class GeminiService {
         );
 
         List<AnimationStep> steps = List.of(
-            AnimationStep.builder().step(1).title("1. Initialize Invariants")
-                .description("Inspect initial array element.")
+            AnimationStep.builder().step(1).title("1. Initialize Base Invariant")
+                .description("Initialize currentMax with first element nums[0] = 4. Pointer at index 0.")
                 .visualType("array").visualData("[4, 2, 7, 1, 9]")
                 .pointers(Map.of("i", 0)).highlights(List.of(0))
-                .vars(Map.of("i", "0", "currentMax", "4")).codeLines(List.of(1, 2)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(2).title("2. Process Iteration i = 2")
-                .description("Element nums[2] = 7 > currentMax (4). Update currentMax = 7.")
+                .vars(Map.of("i", "0", "currentMax", "4")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Iteration i = 1: Compare nums[1] = 2")
+                .description("nums[1] = 2. Compare 2 with currentMax (4). Since 2 <= 4, currentMax remains 4.")
+                .visualType("array").visualData("[4, 2, 7, 1, 9]")
+                .pointers(Map.of("i", 1)).highlights(List.of(1))
+                .vars(Map.of("i", "1", "nums[i]", "2", "currentMax", "4")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Iteration i = 2: Inspect nums[2] = 7")
+                .description("nums[2] = 7. Compare 7 with currentMax (4). 7 > 4! Preparing to update max.")
                 .visualType("array").visualData("[4, 2, 7, 1, 9]")
                 .pointers(Map.of("i", 2)).highlights(List.of(2))
-                .vars(Map.of("i", "2", "nums[i]", "7", "currentMax", "7")).codeLines(List.of(3, 4)).code(code).durationMs(2500).build(),
-            AnimationStep.builder().step(3).title("3. Termination")
-                .description("Reached end of array. Max value is 9.")
+                .vars(Map.of("i", "2", "nums[i]", "7", "currentMax", "4")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. Update currentMax = 7")
+                .description("Update currentMax = max(4, 7) = 7.")
+                .visualType("array").visualData("[4, 2, 7, 1, 9]")
+                .pointers(Map.of("i", 2)).highlights(List.of(2))
+                .vars(Map.of("currentMax", "7", "updated", "true")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. Iteration i = 3: Compare nums[3] = 1")
+                .description("nums[3] = 1. Compare 1 with currentMax (7). 1 <= 7, currentMax remains 7.")
+                .visualType("array").visualData("[4, 2, 7, 1, 9]")
+                .pointers(Map.of("i", 3)).highlights(List.of(3))
+                .vars(Map.of("i", "3", "nums[i]", "1", "currentMax", "7")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Iteration i = 4: Inspect nums[4] = 9")
+                .description("nums[4] = 9. Compare 9 with currentMax (7). 9 > 7! Update currentMax = 9.")
                 .visualType("array").visualData("[4, 2, 7, 1, 9]")
                 .pointers(Map.of("i", 4)).highlights(List.of(4))
-                .vars(Map.of("result", "9", "status", "DONE")).codeLines(List.of(6)).code(code).durationMs(2500).build()
+                .vars(Map.of("i", "4", "nums[i]", "9", "currentMax", "9", "status", "NEW_MAX")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Loop Condition Terminates")
+                .description("Index i reaches array length (5). Loop terminates.")
+                .visualType("array").visualData("[4, 2, 7, 1, 9]")
+                .pointers(Map.of("i", 4)).highlights(List.of(4))
+                .vars(Map.of("i", "5", "loopTerminated", "true", "currentMax", "9")).codeLines(List.of(3)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(8).title("8. Return Maximum Result = 9")
+                .description("Return currentMax = 9. Traversal complete in O(N) time and O(1) space.")
+                .visualType("array").visualData("[4, 2, 7, 1, 9]")
+                .highlights(List.of(4))
+                .vars(Map.of("result", "9", "status", "SUCCESS", "time", "O(N)", "space", "O(1)")).codeLines(List.of(6)).code(code).durationMs(3000).build()
         );
 
         return AnimatedExplanationResponse.builder()
