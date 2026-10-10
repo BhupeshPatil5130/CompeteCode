@@ -391,20 +391,37 @@ public class GeminiService {
      * Guarantees that a rich, animated trace is ALWAYS displayed even when AI API is unavailable.
      */
     private AnimatedExplanationResponse generateDeterministicTrace(Problem problem) {
-        String title = problem.getTitle() != null ? problem.getTitle().toLowerCase() : "";
+        String title = problem.getTitle() != null ? problem.getTitle().toLowerCase().trim() : "";
+        String key = problem.getExecutionKey() != null ? problem.getExecutionKey().toUpperCase().trim() : "";
 
-        if (title.contains("two sum") || title.contains("sum")) {
+        if (key.equals("TWO_SUM") || title.equals("two sum")) {
             return generateTwoSumTrace(problem);
-        } else if (title.contains("water") || title.contains("container") || title.contains("two pointer")) {
+        } else if (key.equals("CONTAINS_DUPLICATE") || title.equals("contains duplicate")) {
+            return generateContainsDuplicateTrace(problem);
+        } else if (key.equals("VALID_ANAGRAM") || title.equals("valid anagram")) {
+            return generateValidAnagramTrace(problem);
+        } else if (key.equals("VALID_PALINDROME") || title.equals("valid palindrome")) {
+            return generateValidPalindromeTrace(problem);
+        } else if (key.equals("VALID_PARENTHESES") || title.equals("valid parentheses")) {
+            return generateValidParenthesesTrace(problem);
+        } else if (key.equals("CONTAINER_WITH_MOST_WATER") || title.contains("container with most water")) {
             return generateContainerWaterTrace(problem);
-        } else if (title.contains("tree") || title.contains("bst")) {
-            return generateTreeTrace(problem);
-        } else if (title.contains("list") || title.contains("node")) {
+        } else if (key.equals("BEST_TIME_STOCK") || title.contains("best time to buy and sell stock")) {
+            return generateBestTimeToBuySellStockTrace(problem);
+        } else if (key.equals("LONGEST_SUBSTRING") || title.contains("longest substring without")) {
+            return generateLongestSubstringTrace(problem);
+        } else if (key.equals("BINARY_SEARCH") || title.equals("binary search")) {
+            return generateBinarySearchTrace(problem);
+        } else if (key.equals("CLIMBING_STAIRS") || title.equals("climbing stairs")) {
+            return generateClimbingStairsTrace(problem);
+        } else if (key.equals("REVERSE_LINKED_LIST") || title.equals("reverse linked list")) {
             return generateLinkedListTrace(problem);
-        } else if (title.contains("matrix") || title.contains("grid")) {
+        } else if (key.equals("MAX_DEPTH") || title.equals("maximum depth of binary tree")) {
+            return generateTreeTrace(problem);
+        } else if (key.equals("NUMBER_OF_ISLANDS") || title.contains("number of islands")) {
             return generateMatrixTrace(problem);
         } else {
-            return generateGeneralArrayTrace(problem);
+            return generateDynamicTrace(problem);
         }
     }
 
@@ -852,6 +869,509 @@ public class GeminiService {
             .summary("Linear scan traversal in O(N) time and O(1) space.")
             .exampleInput("nums = [4, 2, 7, 1, 9]")
             .exampleOutput("9")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateContainsDuplicateTrace(Problem problem) {
+        List<String> code = List.of(
+            "public boolean containsDuplicate(int[] nums) {",
+            "    Set<Integer> set = new HashSet<>();",
+            "    for (int num : nums) {",
+            "        if (set.contains(num)) return true;",
+            "        set.add(num);",
+            "    }",
+            "    return false;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Seen Set")
+                .description("Initialize empty HashSet to store visited numbers for O(1) duplicate checks.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .pointers(Map.of("i", 0)).highlights(List.of())
+                .vars(Map.of("set", "{}", "num", "-")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Process num = 1 (index 0)")
+                .description("Read nums[0] = 1. set.contains(1) -> false. Insert 1 into set.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("num", "1", "inSet", "false", "set", "{1}")).codeLines(List.of(3, 4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(3).title("3. Process num = 2 (index 1)")
+                .description("Read nums[1] = 2. set.contains(2) -> false. Insert 2 into set.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .pointers(Map.of("i", 1)).highlights(List.of(1))
+                .vars(Map.of("num", "2", "inSet", "false", "set", "{1, 2}")).codeLines(List.of(3, 4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Process num = 3 (index 2)")
+                .description("Read nums[2] = 3. set.contains(3) -> false. Insert 3 into set.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .pointers(Map.of("i", 2)).highlights(List.of(2))
+                .vars(Map.of("num", "3", "inSet", "false", "set", "{1, 2, 3}")).codeLines(List.of(3, 4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(5).title("5. Process num = 1 (index 3) - DUPLICATE!")
+                .description("Read nums[3] = 1. set.contains(1) -> TRUE! Number 1 already exists in set.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .pointers(Map.of("i", 3)).highlights(List.of(0, 3))
+                .vars(Map.of("num", "1", "inSet", "true", "duplicateFound", "true")).codeLines(List.of(4)).code(code).durationMs(2500).build(),
+            AnimationStep.builder().step(6).title("6. Return true")
+                .description("Duplicate detected. Return true. Completed in O(N) time and O(N) space.")
+                .visualType("array").visualData("[1, 2, 3, 1]")
+                .highlights(List.of(0, 3))
+                .vars(Map.of("result", "true", "status", "SUCCESS")).codeLines(List.of(4)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Linear scan using HashSet lookup in O(N) time.")
+            .exampleInput("nums = [1, 2, 3, 1]")
+            .exampleOutput("true")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateValidAnagramTrace(Problem problem) {
+        List<String> code = List.of(
+            "public boolean isAnagram(String s, String t) {",
+            "    if (s.length() != t.length()) return false;",
+            "    int[] counts = new int[26];",
+            "    for (char c : s.toCharArray()) counts[c - 'a']++;",
+            "    for (char c : t.toCharArray()) {",
+            "        if (--counts[c - 'a'] < 0) return false;",
+            "    }",
+            "    return true;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Validate String Lengths")
+                .description("Check lengths: s.length() (7) == t.length() (7). Initialize frequency buffer counts[26].")
+                .visualType("pointer").visualData("s=\"anagram\", t=\"nagaram\"")
+                .vars(Map.of("s", "anagram", "t", "nagaram", "counts", "[0...0]")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Count Frequencies for s (\"anagram\")")
+                .description("Increment frequency for every char in s: a:3, n:1, g:1, r:1, m:1.")
+                .visualType("pointer").visualData("{\"a\":3,\"n\":1,\"g\":1,\"r\":1,\"m\":1}")
+                .vars(Map.of("counts", "{a:3, n:1, g:1, r:1, m:1}")).codeLines(List.of(4)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(3).title("3. Decrement Frequencies for t (\"nagaram\")")
+                .description("Scan t: decrement each character count. Inspecting 'n', 'a', 'g' -> all counts remain >= 0.")
+                .visualType("pointer").visualData("{\"a\":2,\"n\":0,\"g\":0,\"r\":1,\"m\":1}")
+                .vars(Map.of("processedChars", "\"nag\"", "allCountsValid", "true")).codeLines(List.of(5, 6)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(4).title("4. Process Remaining Chars (\"aram\")")
+                .description("Decrement for remaining chars 'a', 'r', 'a', 'm'. All counts balance perfectly to 0.")
+                .visualType("pointer").visualData("{\"a\":0,\"n\":0,\"g\":0,\"r\":0,\"m\":0}")
+                .vars(Map.of("finalCounts", "all zero", "status", "BALANCED")).codeLines(List.of(5, 6)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Return true")
+                .description("All character counts balanced. 'nagaram' is a valid anagram of 'anagram'. Return true.")
+                .visualType("pointer").visualData("true")
+                .vars(Map.of("result", "true", "time", "O(N)", "space", "O(1)")).codeLines(List.of(8)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Character frequency balancing in O(N) time and O(1) extra space.")
+            .exampleInput("s = \"anagram\", t = \"nagaram\"")
+            .exampleOutput("true")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateValidPalindromeTrace(Problem problem) {
+        List<String> code = List.of(
+            "public boolean isPalindrome(String s) {",
+            "    int left = 0, right = s.length() - 1;",
+            "    while (left < right) {",
+            "        while (left < right && !Character.isLetterOrDigit(s.charAt(left))) left++;",
+            "        while (left < right && !Character.isLetterOrDigit(s.charAt(right))) right--;",
+            "        if (Character.toLowerCase(s.charAt(left)) != Character.toLowerCase(s.charAt(right))) return false;",
+            "        left++; right--;",
+            "    }",
+            "    return true;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Two Pointers")
+                .description("Set left pointer at start (index 0) and right pointer at end of string.")
+                .visualType("pointer").visualData("A man, a plan, a canal: Panama")
+                .pointers(Map.of("left", 0, "right", 29))
+                .vars(Map.of("left", "0", "right", "29", "s[left]", "A", "s[right]", "a")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Compare Outer Chars ('A' vs 'a')")
+                .description("Convert to lowercase: 'a' == 'a'. Characters match! Advance left to 1, decrement right to 28.")
+                .visualType("pointer").visualData("A man, a plan, a canal: Panama")
+                .pointers(Map.of("left", 1, "right", 28))
+                .vars(Map.of("left", "1", "right", "28", "matched", "true")).codeLines(List.of(6, 7)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(3).title("3. Skip Non-Alphanumeric Characters")
+                .description("Skip space at index 1 -> left = 2 ('m'). Skip space at 28 -> right = 27 ('m').")
+                .visualType("pointer").visualData("A man, a plan, a canal: Panama")
+                .pointers(Map.of("left", 2, "right", 27))
+                .vars(Map.of("left", "2", "right", "27", "s[left]", "m", "s[right]", "m")).codeLines(List.of(4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Compare Center Substrings")
+                .description("Pointers advance comparing 'a', 'n', 'a', 'p', 'l', 'a', 'n'... all alphanumeric characters match.")
+                .visualType("pointer").visualData("A man, a plan, a canal: Panama")
+                .pointers(Map.of("left", 14, "right", 15))
+                .vars(Map.of("status", "INWARD_CONVERGENCE", "matches", "ALL_VALID")).codeLines(List.of(6, 7)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Pointers Meet & Return true")
+                .description("Pointers cross without any mismatch. The string is a valid palindrome. Return true in O(N) time.")
+                .visualType("pointer").visualData("true")
+                .vars(Map.of("result", "true", "time", "O(N)", "space", "O(1)")).codeLines(List.of(9)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Two-pointer inward convergence in O(N) time and O(1) space.")
+            .exampleInput("s = \"A man, a plan, a canal: Panama\"")
+            .exampleOutput("true")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateValidParenthesesTrace(Problem problem) {
+        List<String> code = List.of(
+            "public boolean isValid(String s) {",
+            "    Stack<Character> stack = new Stack<>();",
+            "    for (char c : s.toCharArray()) {",
+            "        if (c == '(' || c == '{' || c == '[') stack.push(c);",
+            "        else if (stack.isEmpty() || !matches(stack.pop(), c)) return false;",
+            "    }",
+            "    return stack.isEmpty();",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Bracket Stack")
+                .description("Initialize empty Stack<Character> for tracking opening brackets.")
+                .visualType("stack").visualData("[]")
+                .vars(Map.of("s", "()[]{}", "stack", "[]")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Push '(' and Match ')'")
+                .description("Encounter '(': push to stack. Next char ')': pop '(' which matches closing ')'.")
+                .visualType("stack").visualData("[\"(\"]")
+                .vars(Map.of("read", "\")\"", "popped", "\"(\"", "matched", "true")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(3).title("3. Push '[' and Match ']'")
+                .description("Encounter '[': push to stack. Next char ']': pop '[' which matches closing ']'.")
+                .visualType("stack").visualData("[\"[\"]")
+                .vars(Map.of("read", "\"]\"", "popped", "\"[\"", "matched", "true")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(4).title("4. Push '{' and Match '}'")
+                .description("Encounter '{': push to stack. Next char '}': pop '{' which matches closing '}'.")
+                .visualType("stack").visualData("[\"{\"]")
+                .vars(Map.of("read", "\"}\"", "popped", "\"{\"", "matched", "true")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Stack is Empty -> Return true")
+                .description("All brackets matched and stack is empty. String is valid. Return true in O(N) time.")
+                .visualType("stack").visualData("[]")
+                .vars(Map.of("stackEmpty", "true", "result", "true")).codeLines(List.of(7)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("LIFO Stack matching of brackets in O(N) time and O(N) space.")
+            .exampleInput("s = \"()[]{}\"")
+            .exampleOutput("true")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateBinarySearchTrace(Problem problem) {
+        List<String> code = List.of(
+            "public int search(int[] nums, int target) {",
+            "    int low = 0, high = nums.length - 1;",
+            "    while (low <= high) {",
+            "        int mid = low + (high - low) / 2;",
+            "        if (nums[mid] == target) return mid;",
+            "        if (nums[mid] < target) low = mid + 1;",
+            "        else high = mid - 1;",
+            "    }",
+            "    return -1;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Search Range")
+                .description("nums = [-1, 0, 3, 5, 9, 12], target = 9. low = 0, high = 5.")
+                .visualType("array").visualData("[-1, 0, 3, 5, 9, 12]")
+                .pointers(Map.of("low", 0, "high", 5)).highlights(List.of(0, 5))
+                .vars(Map.of("low", "0", "high", "5", "target", "9")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Iteration 1: Calculate mid = 2 (nums[2] = 3)")
+                .description("mid = 0 + (5 - 0) / 2 = 2. nums[2] = 3. Compare 3 with target 9.")
+                .visualType("array").visualData("[-1, 0, 3, 5, 9, 12]")
+                .pointers(Map.of("low", 0, "mid", 2, "high", 5)).highlights(List.of(2))
+                .vars(Map.of("mid", "2", "nums[mid]", "3", "target", "9")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(3).title("3. Discard Left Half: low = mid + 1 = 3")
+                .description("nums[2] (3) < target (9). Target must be in right half. Set low = 3.")
+                .visualType("array").visualData("[-1, 0, 3, 5, 9, 12]")
+                .pointers(Map.of("low", 3, "high", 5)).highlights(List.of(3, 4, 5))
+                .vars(Map.of("low", "3", "high", "5")).codeLines(List.of(6)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Iteration 2: Calculate mid = 4 (nums[4] = 9)")
+                .description("mid = 3 + (5 - 3) / 2 = 4. nums[4] = 9.")
+                .visualType("array").visualData("[-1, 0, 3, 5, 9, 12]")
+                .pointers(Map.of("low", 3, "mid", 4, "high", 5)).highlights(List.of(4))
+                .vars(Map.of("mid", "4", "nums[mid]", "9", "target", "9")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Target Found at Index 4!")
+                .description("nums[4] == target (9). Match found! Return index 4 in O(log N) time.")
+                .visualType("array").visualData("[-1, 0, 3, 5, 9, 12]")
+                .pointers(Map.of("mid", 4)).highlights(List.of(4))
+                .vars(Map.of("result", "4", "time", "O(log N)", "status", "SUCCESS")).codeLines(List.of(5)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Binary search halving search space in O(log N) time.")
+            .exampleInput("nums = [-1, 0, 3, 5, 9, 12], target = 9")
+            .exampleOutput("4")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateBestTimeToBuySellStockTrace(Problem problem) {
+        List<String> code = List.of(
+            "public int maxProfit(int[] prices) {",
+            "    int minPrice = prices[0], maxProfit = 0;",
+            "    for (int p : prices) {",
+            "        minPrice = Math.min(minPrice, p);",
+            "        maxProfit = Math.max(maxProfit, p - minPrice);",
+            "    }",
+            "    return maxProfit;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Invariants")
+                .description("prices = [7, 1, 5, 3, 6, 4]. Init minPrice = 7, maxProfit = 0.")
+                .visualType("array").visualData("[7, 1, 5, 3, 6, 4]")
+                .pointers(Map.of("day", 0)).highlights(List.of(0))
+                .vars(Map.of("minPrice", "7", "maxProfit", "0")).codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Day 1: Price Drops to 1")
+                .description("Price 1 < minPrice (7). Update minPrice = 1. Profit = 0.")
+                .visualType("array").visualData("[7, 1, 5, 3, 6, 4]")
+                .pointers(Map.of("day", 1)).highlights(List.of(1))
+                .vars(Map.of("price", "1", "minPrice", "1", "maxProfit", "0")).codeLines(List.of(4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(3).title("3. Day 2: Price = 5")
+                .description("Profit = 5 - 1 = 4. Update maxProfit = 4.")
+                .visualType("array").visualData("[7, 1, 5, 3, 6, 4]")
+                .pointers(Map.of("day", 2)).highlights(List.of(1, 2))
+                .vars(Map.of("price", "5", "minPrice", "1", "profit", "4", "maxProfit", "4")).codeLines(List.of(4, 5)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Day 4: Price Rises to 6 (Peak)")
+                .description("Profit = 6 - 1 = 5 > 4. Update maxProfit = 5!")
+                .visualType("array").visualData("[7, 1, 5, 3, 6, 4]")
+                .pointers(Map.of("day", 4)).highlights(List.of(1, 4))
+                .vars(Map.of("buyDay", "1", "sellDay", "4", "profit", "5", "maxProfit", "5")).codeLines(List.of(4, 5)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Return Maximum Profit = 5")
+                .description("Optimal strategy: Buy on day 1 (price 1), sell on day 4 (price 6). Return 5.")
+                .visualType("array").visualData("[7, 1, 5, 3, 6, 4]")
+                .highlights(List.of(1, 4))
+                .vars(Map.of("result", "5", "status", "OPTIMAL", "time", "O(N)", "space", "O(1)")).codeLines(List.of(7)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("One-pass tracking of min price and max profit in O(N) time.")
+            .exampleInput("prices = [7, 1, 5, 3, 6, 4]")
+            .exampleOutput("5")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateLongestSubstringTrace(Problem problem) {
+        List<String> code = List.of(
+            "public int lengthOfLongestSubstring(String s) {",
+            "    Set<Character> set = new HashSet<>();",
+            "    int left = 0, maxLen = 0;",
+            "    for (int right = 0; right < s.length(); right++) {",
+            "        while (set.contains(s.charAt(right))) set.remove(s.charAt(left++));",
+            "        set.add(s.charAt(right));",
+            "        maxLen = Math.max(maxLen, right - left + 1);",
+            "    }",
+            "    return maxLen;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Sliding Window")
+                .description("s = \"abcabcbb\". Init left = 0, right = 0, maxLen = 0, set = {}.")
+                .visualType("pointer").visualData("abcabcbb")
+                .pointers(Map.of("left", 0, "right", 0))
+                .vars(Map.of("left", "0", "right", "0", "maxLen", "0")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Expand Window to \"abc\"")
+                .description("Characters 'a', 'b', 'c' are unique. Insert into set. Window: [0..2] \"abc\", maxLen = 3.")
+                .visualType("pointer").visualData("abcabcbb")
+                .pointers(Map.of("left", 0, "right", 2))
+                .vars(Map.of("window", "\"abc\"", "windowLen", "3", "maxLen", "3")).codeLines(List.of(4, 6, 7)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(3).title("3. Duplicate 'a' Encountered (right = 3)")
+                .description("char 'a' is already in set. Advance left pointer: remove s[0] ('a'), left becomes 1.")
+                .visualType("pointer").visualData("abcabcbb")
+                .pointers(Map.of("left", 1, "right", 3))
+                .vars(Map.of("removed", "'a'", "left", "1", "window", "\"bca\"")).codeLines(List.of(5, 6)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Slide Through Remaining Chars")
+                .description("Window continues sliding through s. Any duplicate triggers left contraction.")
+                .visualType("pointer").visualData("abcabcbb")
+                .pointers(Map.of("left", 5, "right", 7))
+                .vars(Map.of("status", "SLIDING", "maxLen", "3")).codeLines(List.of(4, 7)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(5).title("5. Return Maximum Substring Length = 3")
+                .description("Longest substring without repeating characters is \"abc\" of length 3. Completed in O(N) time.")
+                .visualType("pointer").visualData("3")
+                .vars(Map.of("result", "3", "status", "SUCCESS", "time", "O(N)", "space", "O(min(M,N))")).codeLines(List.of(9)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Sliding window with Set in O(N) time.")
+            .exampleInput("s = \"abcabcbb\"")
+            .exampleOutput("3")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateClimbingStairsTrace(Problem problem) {
+        List<String> code = List.of(
+            "public int climbStairs(int n) {",
+            "    if (n <= 2) return n;",
+            "    int prev2 = 1, prev1 = 2;",
+            "    for (int i = 3; i <= n; i++) {",
+            "        int curr = prev1 + prev2;",
+            "        prev2 = prev1;",
+            "        prev1 = curr;",
+            "    }",
+            "    return prev1;",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Base Cases (Step 1 & Step 2)")
+                .description("n = 5 stairs. Base cases: 1 stair = 1 way. 2 stairs = 2 ways. prev2 = 1, prev1 = 2.")
+                .visualType("array").visualData("[1, 2, 0, 0, 0]")
+                .pointers(Map.of("step", 2)).highlights(List.of(0, 1))
+                .vars(Map.of("step1", "1", "step2", "2")).codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(2).title("2. Step 3: ways = 1 + 2 = 3")
+                .description("Step 3 can be reached from step 2 (1 step) or step 1 (2 steps). curr = 2 + 1 = 3.")
+                .visualType("array").visualData("[1, 2, 3, 0, 0]")
+                .pointers(Map.of("step", 3)).highlights(List.of(2))
+                .vars(Map.of("i", "3", "curr", "3", "prev2", "2", "prev1", "3")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(3).title("3. Step 4: ways = 2 + 3 = 5")
+                .description("Step 4 can be reached from step 3 or step 2. curr = 3 + 2 = 5.")
+                .visualType("array").visualData("[1, 2, 3, 5, 0]")
+                .pointers(Map.of("step", 4)).highlights(List.of(3))
+                .vars(Map.of("i", "4", "curr", "5", "prev2", "3", "prev1", "5")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2200).build(),
+            AnimationStep.builder().step(4).title("4. Step 5: ways = 3 + 5 = 8")
+                .description("Step 5 can be reached from step 4 or step 3. curr = 5 + 3 = 8.")
+                .visualType("array").visualData("[1, 2, 3, 5, 8]")
+                .pointers(Map.of("step", 5)).highlights(List.of(4))
+                .vars(Map.of("i", "5", "curr", "8", "finalWays", "8")).codeLines(List.of(5, 6, 7)).code(code).durationMs(2400).build(),
+            AnimationStep.builder().step(5).title("5. Return 8 Distinct Ways")
+                .description("Total distinct ways to climb 5 stairs is 8 (Fibonacci sequence). Return 8.")
+                .visualType("array").visualData("[1, 2, 3, 5, 8]")
+                .highlights(List.of(4))
+                .vars(Map.of("result", "8", "time", "O(N)", "space", "O(1)")).codeLines(List.of(9)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Dynamic programming Fibonacci state transition in O(N) time and O(1) space.")
+            .exampleInput("n = 5")
+            .exampleOutput("8")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateDynamicTrace(Problem problem) {
+        String title = problem.getTitle() != null ? problem.getTitle() : "Algorithm Problem";
+        String topic = problem.getTopic() != null ? problem.getTopic() : "Data Structures & Algorithms";
+
+        String exampleInput = "";
+        String exampleOutput = "";
+        if (problem.getExamples() != null && !problem.getExamples().isBlank()) {
+            for (String line : problem.getExamples().split("\n")) {
+                line = line.trim();
+                if (line.toLowerCase().startsWith("input:") && exampleInput.isEmpty()) {
+                    exampleInput = line.substring(6).trim();
+                } else if (line.toLowerCase().startsWith("output:") && exampleOutput.isEmpty()) {
+                    exampleOutput = line.substring(7).trim();
+                }
+            }
+        }
+        if (exampleInput.isEmpty()) exampleInput = "Sample Input for " + title;
+        if (exampleOutput.isEmpty()) exampleOutput = "Expected Result";
+
+        List<String> code = new ArrayList<>();
+        if (problem.getStarterCodeJava() != null && !problem.getStarterCodeJava().isBlank()) {
+            for (String l : problem.getStarterCodeJava().split("\n")) {
+                if (!l.trim().isEmpty()) code.add(l);
+            }
+        }
+        if (code.isEmpty()) {
+            code = List.of(
+                "class Solution {",
+                "    public Object solve(" + exampleInput + ") {",
+                "        // Optimal resolution for " + title,
+                "        return " + exampleOutput + ";",
+                "    }",
+                "}"
+            );
+        }
+
+        String visualType = "array";
+        String visualData = "[]";
+        if (topic.toLowerCase().contains("tree")) {
+            visualType = "tree";
+            visualData = "[\"root\",\"left\",\"right\"]";
+        } else if (topic.toLowerCase().contains("list") || topic.toLowerCase().contains("linked")) {
+            visualType = "linkedlist";
+            visualData = "[\"node1\",\"node2\",\"node3\"]";
+        } else if (topic.toLowerCase().contains("matrix") || topic.toLowerCase().contains("grid")) {
+            visualType = "matrix";
+            visualData = "[[1,0],[0,1]]";
+        } else if (topic.toLowerCase().contains("stack")) {
+            visualType = "stack";
+            visualData = "[]";
+        } else {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\[[^\\]]+\\]").matcher(exampleInput);
+            if (m.find()) {
+                visualData = m.group();
+                visualType = "array";
+            } else {
+                visualType = "pointer";
+                visualData = exampleInput;
+            }
+        }
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Invariants for " + title)
+                .description("Prepare state for " + title + ". Input: " + exampleInput)
+                .visualType(visualType).visualData(visualData)
+                .pointers(Map.of("start", 0)).highlights(List.of(0))
+                .vars(Map.of("input", exampleInput, "target", exampleOutput))
+                .codeLines(List.of(1, 2)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Validate Initial Boundary Conditions")
+                .description("Inspect starting values, base cases, and boundary constraints.")
+                .visualType(visualType).visualData(visualData)
+                .pointers(Map.of("idx", 0)).highlights(List.of(0))
+                .vars(Map.of("status", "CHECKING_BASE_CASES")).codeLines(List.of(2, 3)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Process First Iteration")
+                .description("Execute main loop iteration. Evaluating current values and state transitions.")
+                .visualType(visualType).visualData(visualData)
+                .pointers(Map.of("idx", 0)).highlights(List.of(0))
+                .vars(Map.of("state", "ITERATING")).codeLines(List.of(3, 4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(4).title("4. State Transition & Computation")
+                .description("Apply optimal algorithm logic. Updating internal variables and pointers.")
+                .visualType(visualType).visualData(visualData)
+                .pointers(Map.of("idx", 1)).highlights(List.of(1))
+                .vars(Map.of("state", "UPDATING_ACCUMULATOR")).codeLines(List.of(4)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(5).title("5. Convergence towards Target")
+                .description("Algorithm invariants satisfied. Preparing solution state for return.")
+                .visualType(visualType).visualData(visualData)
+                .pointers(Map.of("idx", 1)).highlights(List.of(0, 1))
+                .vars(Map.of("state", "CONVERGING", "candidate", exampleOutput)).codeLines(List.of(4, 5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Complete Execution & Return Solution")
+                .description("Return evaluated answer: " + exampleOutput + " for " + title + ".")
+                .visualType(visualType).visualData(visualData)
+                .highlights(List.of(0, 1))
+                .vars(Map.of("result", exampleOutput, "status", "SUCCESS")).codeLines(List.of(code.size() > 3 ? code.size() - 1 : code.size())).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(title)
+            .summary("Optimal algorithmic resolution for " + title + " in " + topic + ".")
+            .exampleInput(exampleInput)
+            .exampleOutput(exampleOutput)
             .steps(steps)
             .build();
     }
