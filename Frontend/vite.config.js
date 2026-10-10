@@ -7,10 +7,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': {
+        target: process.env.VITE_BACKEND_URL || 'https://competecode.onrender.com',
+        changeOrigin: true,
+        secure: false,
+      },
       '/ws': {
-        target: 'http://localhost:8080',
+        target: process.env.VITE_BACKEND_URL || 'https://competecode.onrender.com',
         ws: true,
+        changeOrigin: true,
+        secure: false,
       },
     },
   },

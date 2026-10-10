@@ -5,7 +5,7 @@ import SockJS from 'sockjs-client';
 import { Copy, Play, Trophy, ExternalLink, Clock, Users, Shield, Zap, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { battleApi } from '../api/client';
+import { battleApi, WS_URL } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TeamBattleLeaderboard from '../components/TeamBattleLeaderboard';
 
@@ -80,7 +80,7 @@ export default function BattleRoom() {
 
   // WebSocket connection
   useEffect(() => {
-    const wsUrl = `${window.location.origin}/ws/battle`;
+    const wsUrl = WS_URL;
     const client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,

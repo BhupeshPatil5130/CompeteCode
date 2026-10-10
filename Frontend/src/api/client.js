@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://competecode.onrender.com';
+const rawApiUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'https://competecode.onrender.com').replace(/\/+$/, '');
+export const BACKEND_URL = rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl;
+export const API_BASE = `${BACKEND_URL}/api`;
+export const WS_URL = (import.meta.env.VITE_WS_URL || `${BACKEND_URL}/ws/battle`).replace(/\/+$/, '');
 
 let onUnauthorized = null;
 
