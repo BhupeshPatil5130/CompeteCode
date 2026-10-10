@@ -77,52 +77,20 @@ public class GeminiService {
         }
 
         String prompt = """
-                You are a DSA instructor and algorithm visualizer engine.
-                Generate a structured, complete algorithm trace and dry run for this DSA problem.
-                Return ONLY valid JSON. DO NOT wrap with markdown like ```json.
+                Create an animated step-by-step explanation for this DSA problem.
+                Return ONLY valid JSON. DO NOT use markdown formatting like ```json.
                 {
-                  "summary": "1-2 sentence high level overview",
-                  "algorithmName": "e.g. Two Pointers / Hash Map",
-                  "complexity": {
-                    "time": "e.g. O(N)",
-                    "space": "e.g. O(1)",
-                    "explanation": "Brief reasoning"
-                  },
-                  "code": [
-                    {"line": 1, "text": "int[] twoSum(int[] nums, int target) {"},
-                    {"line": 2, "text": "    Map<Integer, Integer> map = new HashMap<>();"},
-                    {"line": 3, "text": "    for (int i = 0; i < nums.length; i++) {"},
-                    {"line": 4, "text": "        int comp = target - nums[i];"},
-                    {"line": 5, "text": "        if (map.containsKey(comp)) return new int[]{map.get(comp), i};"},
-                    {"line": 6, "text": "        map.put(nums[i], i);"},
-                    {"line": 7, "text": "    }"},
-                    {"line": 8, "text": "    return new int[]{};"},
-                    {"line": 9, "text": "}"}
-                  ],
+                  "summary": "one line summary",
                   "steps": [
                     {
                       "step": 1,
-                      "line": 2,
-                      "title": "Initialize Data Structures",
-                      "description": "Initialize state before iterating.",
-                      "visualType": "array|hashmap|tree|stack|queue|linkedlist|matrix|pointer|text",
-                      "visualData": "[2, 7, 11, 15]",
-                      "durationMs": 3000,
-                      "state": {
-                        "variables": {"target": 9, "i": 0},
-                        "pointers": {"i": 0},
-                        "activeIndices": [0],
-                        "dataStructures": {"map": {}}
-                      },
-                      "operations": [
-                        {"type": "lookup", "target": "map", "value": 7}
-                      ]
+                      "title": "Step title",
+                      "description": "What happens",
+                      "visualType": "array|graph|tree|pointer|text|highlight",
+                      "visualData": "JSON string for visualization e.g. [1,2,3]. If visualType is text, do NOT repeat the description here. Provide a separate tip or code snippet.",
+                      "durationMs": 3000
                     }
-                  ],
-                  "result": {
-                    "value": "[0, 1]",
-                    "explanation": "Found matching pair."
-                  }
+                  ]
                 }
 
                 Problem: %s
@@ -136,75 +104,21 @@ public class GeminiService {
             JsonNode root = objectMapper.readTree(json);
 
             List<AnimationStep> steps = new ArrayList<>();
-            if (root.has("steps") && root.get("steps").isArray()) {
-                for (JsonNode node : root.get("steps")) {
-                    AnimationStep.AnimationStepBuilder builder = AnimationStep.builder()
-                            .step(node.path("step").asInt(steps.size() + 1))
-                            .title(node.path("title").asText("Step " + (steps.size() + 1)))
-                            .description(node.path("description").asText(""))
-                            .visualType(node.path("visualType").asText("array"))
-                            .visualData(node.path("visualData").isTextual() ? node.path("visualData").asText() : node.path("visualData").toString())
-                            .durationMs(node.path("durationMs").asInt(3000));
-
-                    if (node.has("line") && !node.get("line").isNull()) {
-                        builder.line(node.get("line").asInt());
-                    }
-
-                    if (node.has("state") && !node.get("state").isNull()) {
-                        try {
-                            AnimationStep.StepState state = objectMapper.treeToValue(node.get("state"), AnimationStep.StepState.class);
-                            builder.state(state);
-                        } catch (Exception ignored) {}
-                    }
-
-                    if (node.has("operations") && node.get("operations").isArray()) {
-                        try {
-                            List<AnimationStep.Operation> ops = new ArrayList<>();
-                            for (JsonNode opNode : node.get("operations")) {
-                                ops.add(objectMapper.treeToValue(opNode, AnimationStep.Operation.class));
-                            }
-                            builder.operations(ops);
-                        } catch (Exception ignored) {}
-                    }
-
-                    steps.add(builder.build());
-                }
-            }
-
-            List<AnimationStep.CodeLine> codeLines = new ArrayList<>();
-            if (root.has("code") && root.get("code").isArray()) {
-                for (JsonNode cl : root.get("code")) {
-                    codeLines.add(new AnimationStep.CodeLine(cl.path("line").asInt(), cl.path("text").asText()));
-                }
-            }
-
-            AnimatedExplanationResponse.Complexity complexity = null;
-            if (root.has("complexity") && !root.get("complexity").isNull()) {
-                JsonNode cNode = root.get("complexity");
-                complexity = AnimatedExplanationResponse.Complexity.builder()
-                        .time(cNode.path("time").asText("O(N)"))
-                        .space(cNode.path("space").asText("O(1)"))
-                        .explanation(cNode.path("explanation").asText(null))
-                        .build();
-            }
-
-            AnimatedExplanationResponse.Result result = null;
-            if (root.has("result") && !root.get("result").isNull()) {
-                JsonNode rNode = root.get("result");
-                result = AnimatedExplanationResponse.Result.builder()
-                        .value(rNode.path("value").asText(""))
-                        .explanation(rNode.path("explanation").asText(null))
-                        .build();
+            for (JsonNode node : root.get("steps")) {
+                steps.add(AnimationStep.builder()
+                        .step(node.get("step").asInt())
+                        .title(node.get("title").asText())
+                        .description(node.get("description").asText())
+                        .visualType(node.get("visualType").asText())
+                        .visualData(node.get("visualData").asText())
+                        .durationMs(node.has("durationMs") ? node.get("durationMs").asInt() : 3000)
+                        .build());
             }
 
             return AnimatedExplanationResponse.builder()
                     .problemTitle(problem.getTitle())
-                    .summary(root.path("summary").asText("Algorithmic explanation for " + problem.getTitle()))
-                    .algorithmName(root.path("algorithmName").asText(null))
+                    .summary(root.get("summary").asText())
                     .steps(steps)
-                    .code(codeLines.isEmpty() ? null : codeLines)
-                    .complexity(complexity)
-                    .result(result)
                     .build();
         } catch (Exception e) {
             log.warn("Gemini explanation failed, using fallback: {}", e.getMessage());
@@ -427,45 +341,10 @@ public class GeminiService {
                 .description("Write clean code, handle edge cases (empty inputs), and submit!")
                 .visualType("pointer").visualData("return result;").durationMs(2500).build());
 
-        List<AnimationStep.CodeLine> defaultCode = List.of(
-                new AnimationStep.CodeLine(1, "// Solution for " + problem.getTitle()),
-                new AnimationStep.CodeLine(2, "public int solve(int[] nums) {"),
-                new AnimationStep.CodeLine(3, "    int result = 0;"),
-                new AnimationStep.CodeLine(4, "    for (int i = 0; i < nums.length; i++) {"),
-                new AnimationStep.CodeLine(5, "        result = Math.max(result, nums[i]);"),
-                new AnimationStep.CodeLine(6, "    }"),
-                new AnimationStep.CodeLine(7, "    return result;"),
-                new AnimationStep.CodeLine(8, "}")
-        );
-
-        // Assign default line mappings and variables to steps so code highlighting and variable inspector work
-        for (int i = 0; i < steps.size(); i++) {
-            AnimationStep s = steps.get(i);
-            s.setLine(Math.min(i + 2, defaultCode.size()));
-            if (s.getState() == null) {
-                s.setState(AnimationStep.StepState.builder()
-                        .variables(Map.of("step", i + 1, "status", "executing"))
-                        .activeIndices(List.of(Math.min(i, 3)))
-                        .pointers(Map.of("curr", Math.min(i, 3)))
-                        .build());
-            }
-        }
-
         return AnimatedExplanationResponse.builder()
                 .problemTitle(problem.getTitle())
                 .summary("A dynamic algorithmic walkthrough for " + problem.getTitle())
-                .algorithmName("Standard Algorithm")
                 .steps(steps)
-                .code(defaultCode)
-                .complexity(AnimatedExplanationResponse.Complexity.builder()
-                        .time("O(N)")
-                        .space("O(1)")
-                        .explanation("Optimal single-pass solution.")
-                        .build())
-                .result(AnimatedExplanationResponse.Result.builder()
-                        .value("Optimal Solution Verified")
-                        .explanation("Passed all sample test cases successfully.")
-                        .build())
                 .build();
     }
 }
