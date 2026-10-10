@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply m-0 font-sans bg-surface text-neutral-200 min-h-screen antialiased;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-600;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-orange-500 to-purple-500;
+  }
+
+  .badge-easy {
+    @apply text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .badge-medium {
+    @apply text-amber-400 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .badge-hard {
+    @apply text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .badge-expert {
+    @apply text-red-400 bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .skeleton-line {
+    @apply h-4 rounded bg-gradient-to-r from-surface-tertiary via-surface-hover to-surface-tertiary bg-[length:200%_100%] animate-shimmer;
+  }
+}
