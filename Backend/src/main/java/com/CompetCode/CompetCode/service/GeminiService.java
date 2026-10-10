@@ -396,6 +396,8 @@ public class GeminiService {
 
         if (key.equals("TWO_SUM") || title.equals("two sum")) {
             return generateTwoSumTrace(problem);
+        } else if (key.equals("LONGEST_PALINDROME") || title.equals("longest palindromic substring")) {
+            return generateLongestPalindromeTrace(problem);
         } else if (key.equals("CONTAINS_DUPLICATE") || title.equals("contains duplicate")) {
             return generateContainsDuplicateTrace(problem);
         } else if (key.equals("VALID_ANAGRAM") || title.equals("valid anagram")) {
@@ -869,6 +871,84 @@ public class GeminiService {
             .summary("Linear scan traversal in O(N) time and O(1) space.")
             .exampleInput("nums = [4, 2, 7, 1, 9]")
             .exampleOutput("9")
+            .steps(steps)
+            .build();
+    }
+
+    private AnimatedExplanationResponse generateLongestPalindromeTrace(Problem problem) {
+        List<String> code = List.of(
+            "public String longestPalindrome(String s) {",
+            "    if (s == null || s.length() < 1) return \"\";",
+            "    int start = 0, end = 0;",
+            "    for (int i = 0; i < s.length(); i++) {",
+            "        int len1 = expandAroundCenter(s, i, i);",
+            "        int len2 = expandAroundCenter(s, i, i + 1);",
+            "        int len = Math.max(len1, len2);",
+            "        if (len > end - start) {",
+            "            start = i - (len - 1) / 2;",
+            "            end = i + len / 2;",
+            "        }",
+            "    }",
+            "    return s.substring(start, end + 1);",
+            "}"
+        );
+
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder().step(1).title("1. Initialize Invariants for \"babad\"")
+                .description("Input string s = \"babad\". Initialize start = 0, end = 0. Iterate through all possible centers.")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("center", 0)).highlights(List.of(0))
+                .vars(Map.of("s", "babad", "start", "0", "end", "0", "longest", "\"b\""))
+                .codeLines(List.of(1, 2, 3)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(2).title("2. Center i = 0 (char 'b')")
+                .description("Odd center at index 0 ('b'). Cannot expand outward. Palindrome is \"b\" (length 1).")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("i", 0)).highlights(List.of(0))
+                .vars(Map.of("center", "0", "len", "1", "longest", "\"b\""))
+                .codeLines(List.of(4, 5, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(3).title("3. Center i = 1 (char 'a') - Expand!")
+                .description("Odd center at index 1 ('a'). Expand outward: left = 0 ('b') and right = 2 ('b').")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("left", 0, "center", 1, "right", 2)).highlights(List.of(0, 1, 2))
+                .vars(Map.of("s[left]", "b", "s[right]", "b", "match", "true"))
+                .codeLines(List.of(5)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(4).title("4. Palindrome \"bab\" Found (Length 3)")
+                .description("Characters match ('b' == 'b')! Palindrome is \"bab\" (length 3 > 1). Update start = 0, end = 2.")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("start", 0, "end", 2)).highlights(List.of(0, 1, 2))
+                .vars(Map.of("start", "0", "end", "2", "longest", "\"bab\"", "maxLen", "3"))
+                .codeLines(List.of(8, 9, 10)).code(code).durationMs(2400).build(),
+
+            AnimationStep.builder().step(5).title("5. Center i = 2 (char 'b') - Expand to \"aba\"")
+                .description("Expand around index 2 ('b'): left = 1 ('a'), right = 3 ('a'). Match 'a' == 'a' yields \"aba\" (length 3 <= current max).")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("left", 1, "center", 2, "right", 3)).highlights(List.of(1, 2, 3))
+                .vars(Map.of("candidate", "\"aba\"", "len", "3", "longest", "\"bab\""))
+                .codeLines(List.of(5, 7)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(6).title("6. Center i = 3 (char 'a') - Mismatch")
+                .description("Expand around index 3: left = 2 ('b'), right = 4 ('d'). 'b' != 'd' (mismatch).")
+                .visualType("pointer").visualData("babad")
+                .pointers(Map.of("left", 2, "center", 3, "right", 4)).highlights(List.of(2, 4))
+                .vars(Map.of("s[2]", "b", "s[4]", "d", "match", "false"))
+                .codeLines(List.of(5)).code(code).durationMs(2200).build(),
+
+            AnimationStep.builder().step(7).title("7. Return Longest Palindromic Substring \"bab\"")
+                .description("All centers inspected. Return s.substring(0, 3) = \"bab\" in O(N^2) time and O(1) space.")
+                .visualType("pointer").visualData("bab")
+                .highlights(List.of(0, 1, 2))
+                .vars(Map.of("result", "\"bab\"", "status", "SUCCESS", "time", "O(N^2)", "space", "O(1)"))
+                .codeLines(List.of(13)).code(code).durationMs(3000).build()
+        );
+
+        return AnimatedExplanationResponse.builder()
+            .problemTitle(problem.getTitle())
+            .summary("Expand around center in O(N^2) time and O(1) space to find longest palindromic substring.")
+            .exampleInput("s = \"babad\"")
+            .exampleOutput("\"bab\"")
             .steps(steps)
             .build();
     }
