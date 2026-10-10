@@ -73,142 +73,168 @@ public class GeminiService {
 
     public AnimatedExplanationResponse generateAnimatedExplanation(Problem problem) {
         if (apiKey == null || apiKey.isBlank()) {
-            return fallbackExplanation(problem);
+            return noApiKeyResponse(problem);
         }
 
         String prompt = """
-                You are a senior DSA algorithm visualizer engine.
-                Generate a structured, complete algorithm trace and dry run for this DSA problem.
-                Return ONLY valid JSON. DO NOT use markdown formatting like ```json.
+                You are an expert DSA algorithm trace engine.
+
+                Your task: Perform a REAL DRY-RUN of the algorithm on the FIRST example given.
+                Do NOT invent generic steps. Trace the actual execution — show the real array/data,
+                real pointer positions, real variable values at every iteration.
+
+                CRITICAL RULES:
+                1. Parse the first example input carefully and use its EXACT values.
+                2. Every step must show the data structure in its CURRENT state during the trace.
+                3. "visualData": ALWAYS include the data structure at this step. For array or two-pointer problems, this MUST be the full JSON array of elements at this step (e.g. [2, 7, 11, 15]). If elements were swapped or updated, reflect the change! NEVER leave visualData empty.
+                4. "pointers" must show REAL index positions (0-based) at that step (e.g. {"i": 0} or {"left": 0, "right": 3}).
+                5. "vars" must show REAL computed variable values at that step (e.g. {"target": "9", "complement": "7", "map": "{2: 0}"}).
+                6. "highlights" must be the 0-based indices currently being examined or compared (e.g. [0] or [0, 1]).
+                7. "codeLines" must point to the 1-based line number(s) in "code" executing at that step.
+                8. Include "code" in step 1 — provide the clean optimal algorithm in pseudocode or Java.
+                9. Generate one step per meaningful operation in the algorithm (loop iteration, comparison, hash map insert, pointer move, swap).
+                10. Generate 6 to 12 steps total — enough to show the COMPLETE trace to the final answer.
+                11. End with a step showing the final result/return value with the answer indices highlighted.
+
+                visualType rules:
+                - "array" → any 1-D array iteration (visualData = JSON array e.g. [2, 7, 11, 15])
+                - "two-pointer" → two-pointer or sliding window (visualData = full array e.g. [1, 8, 6, 2, 5, 4, 8, 3, 7])
+                - "bars" → height-based problems (visualData = JSON array of heights)
+                - "tree" → binary tree (visualData = BFS-order JSON array e.g. [3,9,20,null,null,15,7])
+                - "matrix" → 2-D grid problems (visualData = 2D JSON array)
+                - "stack" → stack-based problems (visualData = current stack contents bottom→top)
+                - "linkedlist" → linked list problems (visualData = JSON array of node values)
+                - "pointer" → single highlighted value or expression
+                - "text" → explanation-only step
+
+                Return ONLY this JSON structure — no markdown, no extra text:
                 {
-                  "summary": "1-2 sentence high-level algorithmic overview",
-                  "algorithmName": "e.g. Hash Map / Two Pointers / Binary Search",
-                  "complexity": {
-                    "time": "e.g. O(N)",
-                    "space": "e.g. O(1)",
-                    "explanation": "Clear complexity reasoning"
-                  },
-                  "code": [
-                    {"line": 1, "text": "public int[] solve(int[] nums, int target) {"},
-                    {"line": 2, "text": "    Map<Integer, Integer> map = new HashMap<>();"},
-                    {"line": 3, "text": "    for (int i = 0; i < nums.length; i++) {"},
-                    {"line": 4, "text": "        int comp = target - nums[i];"},
-                    {"line": 5, "text": "        if (map.containsKey(comp)) return new int[]{map.get(comp), i};"},
-                    {"line": 6, "text": "        map.put(nums[i], i);"},
-                    {"line": 7, "text": "    }"},
-                    {"line": 8, "text": "    return new int[]{};"},
-                    {"line": 9, "text": "}"}
-                  ],
+                  "summary": "one-line summary of the approach",
+                  "exampleInput": "the first example input you used for the trace",
+                  "exampleOutput": "the expected output",
                   "steps": [
                     {
                       "step": 1,
-                      "line": 2,
                       "title": "Initialize Data Structures",
-                      "description": "Initialize HashMap to store complements as we traverse.",
+                      "description": "Initialize pointers and hash table.",
                       "visualType": "array",
-                      "visualData": "[2, 7, 11, 15]",
-                      "durationMs": 3000,
-                      "state": {
-                        "variables": {"target": 9, "i": 0, "comp": 7},
-                        "pointers": {"i": 0},
-                        "activeIndices": [0],
-                        "dataStructures": {"map": {}}
-                      },
-                      "operations": [
-                        {"type": "lookup", "target": "map", "value": 7}
-                      ]
+                      "visualData": [2, 7, 11, 15],
+                      "pointers": {"i": 0},
+                      "highlights": [0],
+                      "vars": {"target": "9", "map": "{}"},
+                      "codeLines": [1, 2],
+                      "code": ["public int[] twoSum(int[] nums, int target) {", "    Map<Integer, Integer> map = new HashMap<>();"],
+                      "durationMs": 2500
                     }
-                  ],
-                  "result": {
-                    "value": "[0, 1]",
-                    "explanation": "Found matching pair satisfying target."
-                  }
+                  ]
                 }
 
-                Problem: %s
-                Description: %s
-                Examples: %s
-                """.formatted(problem.getTitle(), problem.getDescription(), problem.getExamples());
+                Problem title: %s
+                Problem description: %s
+                Examples (use the FIRST one for the trace): %s
+                Constraints: %s
+                """.formatted(
+                        problem.getTitle(),
+                        problem.getDescription(),
+                        problem.getExamples() != null ? problem.getExamples() : "No examples provided",
+                        problem.getConstraints() != null ? problem.getConstraints() : "");
 
         try {
             String response = callGemini(prompt);
             String json = extractJsonObject(response);
             JsonNode root = objectMapper.readTree(json);
 
+            String exampleInputStr = root.path("exampleInput").asText("");
+            // Helper fallback array from exampleInput e.g. "[2, 7, 11, 15]"
+            String fallbackArray = "";
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\[[^\\]]+\\]").matcher(exampleInputStr);
+            if (m.find()) {
+                fallbackArray = m.group();
+            } else if (problem.getExamples() != null) {
+                java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("\\[[^\\]]+\\]").matcher(problem.getExamples());
+                if (m2.find()) {
+                    fallbackArray = m2.group();
+                }
+            }
+
             List<AnimationStep> steps = new ArrayList<>();
-            if (root.has("steps") && root.get("steps").isArray()) {
-                for (JsonNode node : root.get("steps")) {
-                    AnimationStep.AnimationStepBuilder builder = AnimationStep.builder()
-                            .step(node.path("step").asInt(steps.size() + 1))
-                            .title(node.path("title").asText("Step " + (steps.size() + 1)))
-                            .description(node.path("description").asText(""))
-                            .visualType(node.path("visualType").asText("array"))
-                            .visualData(node.path("visualData").isTextual() ? node.path("visualData").asText() : node.path("visualData").toString())
-                            .durationMs(node.path("durationMs").asInt(3000));
-
-                    if (node.has("line") && !node.get("line").isNull()) {
-                        builder.line(node.get("line").asInt());
+            for (JsonNode node : root.get("steps")) {
+                JsonNode vNode = node.get("visualData");
+                String visualDataStr = "";
+                if (vNode != null && !vNode.isNull()) {
+                    if (vNode.isTextual()) {
+                        visualDataStr = vNode.asText();
+                    } else {
+                        visualDataStr = vNode.toString();
                     }
-
-                    if (node.has("state") && !node.get("state").isNull()) {
-                        try {
-                            AnimationStep.StepState state = objectMapper.treeToValue(node.get("state"), AnimationStep.StepState.class);
-                            builder.state(state);
-                        } catch (Exception ignored) {}
-                    }
-
-                    if (node.has("operations") && node.get("operations").isArray()) {
-                        try {
-                            List<AnimationStep.Operation> ops = new ArrayList<>();
-                            for (JsonNode opNode : node.get("operations")) {
-                                ops.add(objectMapper.treeToValue(opNode, AnimationStep.Operation.class));
-                            }
-                            builder.operations(ops);
-                        } catch (Exception ignored) {}
-                    }
-
-                    steps.add(builder.build());
                 }
-            }
 
-            List<AnimationStep.CodeLine> codeLines = new ArrayList<>();
-            if (root.has("code") && root.get("code").isArray()) {
-                for (JsonNode cl : root.get("code")) {
-                    codeLines.add(new AnimationStep.CodeLine(cl.path("line").asInt(), cl.path("text").asText()));
+                // If visualData is blank, fallback to previous step or example input array
+                if (visualDataStr.isBlank() || visualDataStr.equals("[]")) {
+                    if (!steps.isEmpty() && steps.get(steps.size() - 1).getVisualData() != null && !steps.get(steps.size() - 1).getVisualData().isBlank()) {
+                        visualDataStr = steps.get(steps.size() - 1).getVisualData();
+                    } else if (!fallbackArray.isBlank()) {
+                        visualDataStr = fallbackArray;
+                    }
                 }
-            }
 
-            AnimatedExplanationResponse.Complexity complexity = null;
-            if (root.has("complexity") && !root.get("complexity").isNull()) {
-                JsonNode cNode = root.get("complexity");
-                complexity = AnimatedExplanationResponse.Complexity.builder()
-                        .time(cNode.path("time").asText("O(N)"))
-                        .space(cNode.path("space").asText("O(1)"))
-                        .explanation(cNode.path("explanation").asText(null))
-                        .build();
-            }
+                String visualType = node.path("visualType").asText("array");
+                if (visualType.equalsIgnoreCase("text") && !fallbackArray.isBlank()) {
+                    visualType = "array";
+                }
 
-            AnimatedExplanationResponse.Result result = null;
-            if (root.has("result") && !root.get("result").isNull()) {
-                JsonNode rNode = root.get("result");
-                result = AnimatedExplanationResponse.Result.builder()
-                        .value(rNode.path("value").asText(""))
-                        .explanation(rNode.path("explanation").asText(null))
-                        .build();
+                AnimationStep.AnimationStepBuilder builder = AnimationStep.builder()
+                        .step(node.path("step").asInt())
+                        .title(node.path("title").asText())
+                        .description(node.path("description").asText())
+                        .visualType(visualType)
+                        .visualData(visualDataStr)
+                        .durationMs(node.path("durationMs").asInt(3000));
+
+                // pointers map
+                if (node.has("pointers") && node.get("pointers").isObject()) {
+                    java.util.Map<String, Integer> ptrs = new java.util.LinkedHashMap<>();
+                    node.get("pointers").fields().forEachRemaining(e -> ptrs.put(e.getKey(), e.getValue().asInt()));
+                    builder.pointers(ptrs);
+                }
+                // highlights list
+                if (node.has("highlights") && node.get("highlights").isArray()) {
+                    java.util.List<Integer> hl = new java.util.ArrayList<>();
+                    node.get("highlights").forEach(n -> hl.add(n.asInt()));
+                    builder.highlights(hl);
+                }
+                // vars map
+                if (node.has("vars") && node.get("vars").isObject()) {
+                    java.util.Map<String, String> vars = new java.util.LinkedHashMap<>();
+                    node.get("vars").fields().forEachRemaining(e -> vars.put(e.getKey(), e.getValue().asText()));
+                    builder.vars(vars);
+                }
+                // codeLines list
+                if (node.has("codeLines") && node.get("codeLines").isArray()) {
+                    java.util.List<Integer> cl = new java.util.ArrayList<>();
+                    node.get("codeLines").forEach(n -> cl.add(n.asInt()));
+                    builder.codeLines(cl);
+                }
+                // code array
+                if (node.has("code") && node.get("code").isArray()) {
+                    java.util.List<String> code = new java.util.ArrayList<>();
+                    node.get("code").forEach(n -> code.add(n.asText()));
+                    builder.code(code);
+                }
+
+                steps.add(builder.build());
             }
 
             return AnimatedExplanationResponse.builder()
                     .problemTitle(problem.getTitle())
-                    .summary(root.path("summary").asText("Algorithmic walkthrough for " + problem.getTitle()))
-                    .algorithmName(root.path("algorithmName").asText("Optimal DSA Algorithm"))
+                    .summary(root.path("summary").asText())
+                    .exampleInput(root.path("exampleInput").asText(""))
+                    .exampleOutput(root.path("exampleOutput").asText(""))
                     .steps(steps)
-                    .code(codeLines.isEmpty() ? null : codeLines)
-                    .complexity(complexity)
-                    .result(result)
                     .build();
         } catch (Exception e) {
-            log.warn("Gemini explanation failed, using fallback: {}", e.getMessage());
-            return fallbackExplanation(problem);
+            log.warn("Gemini dry-run explanation failed: {}", e.getMessage());
+            return noApiKeyResponse(problem);
         }
     }
 
@@ -344,159 +370,27 @@ public class GeminiService {
         return cases;
     }
 
-    private AnimatedExplanationResponse fallbackExplanation(Problem problem) {
-        String title = problem.getTitle().toLowerCase();
-        List<AnimationStep> steps = new ArrayList<>();
-
-        List<AnimationStep.CodeLine> defaultCode = List.of(
-                new AnimationStep.CodeLine(1, "// Optimal implementation for " + problem.getTitle()),
-                new AnimationStep.CodeLine(2, "public int solve(int[] arr) {"),
-                new AnimationStep.CodeLine(3, "    int current = 0;"),
-                new AnimationStep.CodeLine(4, "    for (int i = 0; i < arr.length; i++) {"),
-                new AnimationStep.CodeLine(5, "        current = Math.max(current, arr[i]);"),
-                new AnimationStep.CodeLine(6, "    }"),
-                new AnimationStep.CodeLine(7, "    return current;"),
-                new AnimationStep.CodeLine(8, "}")
+    /**
+     * Shown when no Gemini API key is configured or the AI call fails entirely.
+     * No hardcoded algorithm steps — user is informed to configure the key.
+     */
+    private AnimatedExplanationResponse noApiKeyResponse(Problem problem) {
+        List<AnimationStep> steps = List.of(
+            AnimationStep.builder()
+                .step(1)
+                .title("AI Animation Unavailable")
+                .description("The Gemini AI key is not configured or the AI call failed. " +
+                        "Set the GEMINI_API_KEY environment variable and restart the backend " +
+                        "to enable live dry-run animations for " + problem.getTitle() + ".")
+                .visualType("text")
+                .visualData("export GEMINI_API_KEY=your_key_here")
+                .durationMs(4000)
+                .build()
         );
-
-        steps.add(AnimationStep.builder().step(1).line(2).title("1. Understand the Problem")
-                .description("Goal: " + problem.getTitle() + ".\nWe initialize our pointers and state variables.")
-                .visualType("text").visualData("Analyze inputs carefully.")
-                .state(AnimationStep.StepState.builder()
-                        .variables(Map.of("step", 1, "status", "initializing"))
-                        .build())
-                .durationMs(3000).build());
-
-        if (title.contains("tree") || title.contains("bst")) {
-            steps.add(AnimationStep.builder().step(2).line(3).title("2. Visualize the Tree")
-                    .description("Trees are hierarchical. Let's inspect root and child nodes.")
-                    .visualType("tree").visualData("[\"10\", \"5\", \"15\", \"3\", \"7\", \"null\", \"18\"]")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("root", 10, "depth", 1)).build())
-                    .durationMs(4000).build());
-            steps.add(AnimationStep.builder().step(3).line(4).title("3. Recursive Traversal")
-                    .description("DFS traverses root -> left -> right child branches.")
-                    .visualType("text").visualData("Exploring left branch first.")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("node", 5, "visited", "left")).build())
-                    .durationMs(3000).build());
-            steps.add(AnimationStep.builder().step(4).line(5).title("4. Process Current Node")
-                    .description("Perform condition check and record intermediate branch value.")
-                    .visualType("pointer").visualData("Node (val: 10)")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("currentVal", 10, "valid", true)).build())
-                    .durationMs(2500).build());
-            steps.add(AnimationStep.builder().step(5).line(6).title("5. Return & Backtrack")
-                    .description("Merge answers from left and right subtrees.")
-                    .visualType("tree").visualData("[\"5\", \"15\"]")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("subtreeSum", 20)).build())
-                    .durationMs(3500).build());
-        } else if (title.contains("matrix") || title.contains("grid") || title.contains("island")) {
-            steps.add(AnimationStep.builder().step(2).line(3).title("2. Understand the Grid")
-                    .description("Matrix representation: rows represent 'r' and cols represent 'c'.")
-                    .visualType("matrix").visualData("[[1,0,1],[0,1,0],[1,1,1]]")
-                    .state(AnimationStep.StepState.builder().activeCell(new int[]{0, 0}).variables(Map.of("r", 0, "c", 0)).build())
-                    .durationMs(4000).build());
-            steps.add(AnimationStep.builder().step(3).line(4).title("3. Boundary Conditions")
-                    .description("Verify bounds (0 <= r < R, 0 <= c < C) to avoid OutOfBounds.")
-                    .visualType("pointer").visualData("0 <= r < R, 0 <= c < C")
-                    .state(AnimationStep.StepState.builder().activeCell(new int[]{0, 0}).variables(Map.of("inBounds", true)).build())
-                    .durationMs(3000).build());
-            steps.add(AnimationStep.builder().step(4).line(5).title("4. Explore Neighbors")
-                    .description("Traverse in 4 cardinal directions: Up, Down, Left, Right.")
-                    .visualType("matrix").visualData("[[0,1,0],[1,\"X\",1],[0,1,0]]")
-                    .state(AnimationStep.StepState.builder().activeCell(new int[]{1, 1}).variables(Map.of("islandCount", 1)).build())
-                    .durationMs(4000).build());
-            steps.add(AnimationStep.builder().step(5).line(6).title("5. Mark Visited")
-                    .description("Mutate cell or maintain visited table to prevent infinite cycle.")
-                    .visualType("pointer").visualData("grid[r][c] = '0'")
-                    .state(AnimationStep.StepState.builder().activeCell(new int[]{1, 1}).variables(Map.of("visited", true)).build())
-                    .durationMs(2500).build());
-        } else if (title.contains("list") || title.contains("node")) {
-            steps.add(AnimationStep.builder().step(2).line(3).title("2. Visualize Linked List")
-                    .description("Nodes linked sequentially via pointer references.")
-                    .visualType("linkedlist").visualData("[\"1\", \"2\", \"3\", \"4\"]")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("head", 1, "curr", 1)).build())
-                    .durationMs(4000).build());
-            steps.add(AnimationStep.builder().step(3).line(4).title("3. Advance Pointers")
-                    .description("Move forward: curr = curr.next until tail is reached.")
-                    .visualType("pointer").visualData("curr = curr.next")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("prev", 1, "curr", 2)).build())
-                    .durationMs(2500).build());
-            steps.add(AnimationStep.builder().step(4).line(5).title("4. Traverse to Tail")
-                    .description("Loop invariant preserved until curr reaches null.")
-                    .visualType("linkedlist").visualData("[\"2\", \"3\", \"4\"]")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("curr", 4, "isTail", true)).build())
-                    .durationMs(3000).build());
-            steps.add(AnimationStep.builder().step(5).line(6).title("5. Complete Operation")
-                    .description("Return head reference of modified list.")
-                    .visualType("text").visualData("return newHead;")
-                    .state(AnimationStep.StepState.builder().variables(Map.of("returned", 1)).build())
-                    .durationMs(3500).build());
-        } else {
-            // General array / hashmap / search
-            steps.add(AnimationStep.builder().step(2).line(3).title("2. Initialize State")
-                    .description("Set up indices and inspect array elements.")
-                    .visualType("array").visualData("[\"4\", \"2\", \"7\", \"1\", \"9\"]")
-                    .state(AnimationStep.StepState.builder()
-                            .activeIndices(List.of(0))
-                            .pointers(Map.of("i", 0))
-                            .variables(Map.of("i", 0, "val", 4, "max", 4))
-                            .build())
-                    .durationMs(4000).build());
-            steps.add(AnimationStep.builder().step(3).line(4).title("3. Check Condition")
-                    .description("Evaluate element at index i against optimal criteria.")
-                    .visualType("array").visualData("[\"4\", \"2\", \"7\", \"1\", \"9\"]")
-                    .state(AnimationStep.StepState.builder()
-                            .activeIndices(List.of(1))
-                            .pointers(Map.of("i", 1))
-                            .variables(Map.of("i", 1, "val", 2, "max", 4))
-                            .build())
-                    .durationMs(3000).build());
-            steps.add(AnimationStep.builder().step(4).line(5).title("4. Update Invariants")
-                    .description("Maintain running peak / state variables across iterations.")
-                    .visualType("array").visualData("[\"4\", \"2\", \"7\", \"1\", \"9\"]")
-                    .state(AnimationStep.StepState.builder()
-                            .activeIndices(List.of(2))
-                            .pointers(Map.of("i", 2))
-                            .variables(Map.of("i", 2, "val", 7, "max", 7))
-                            .build())
-                    .durationMs(3000).build());
-            steps.add(AnimationStep.builder().step(5).line(6).title("5. Final Iteration")
-                    .description("Process remaining elements to reach termination condition.")
-                    .visualType("array").visualData("[\"4\", \"2\", \"7\", \"1\", \"9\"]")
-                    .state(AnimationStep.StepState.builder()
-                            .activeIndices(List.of(4))
-                            .pointers(Map.of("i", 4))
-                            .variables(Map.of("i", 4, "val", 9, "max", 9))
-                            .build())
-                    .durationMs(3000).build());
-        }
-
-        steps.add(AnimationStep.builder().step(6).line(7).title("6. Analyze Complexity")
-                .description("Time: Single linear pass O(N). Space: O(1) in-place auxiliary memory.")
-                .visualType("text").visualData("Time: O(N) | Space: O(1)")
-                .state(AnimationStep.StepState.builder().variables(Map.of("time", "O(N)", "space", "O(1)")).build())
-                .durationMs(3500).build());
-
-        steps.add(AnimationStep.builder().step(7).line(8).title("7. Return Optimal Result")
-                .description("Algorithm successfully completed and verified.")
-                .visualType("pointer").visualData("return max;")
-                .state(AnimationStep.StepState.builder().variables(Map.of("result", 9, "status", "SUCCESS")).build())
-                .durationMs(2500).build());
-
         return AnimatedExplanationResponse.builder()
                 .problemTitle(problem.getTitle())
-                .summary("Interactive algorithmic trace for " + problem.getTitle())
-                .algorithmName("Linear Scan & Optimal Invariant")
+                .summary("Configure GEMINI_API_KEY to enable AI-powered algorithm dry-runs.")
                 .steps(steps)
-                .code(defaultCode)
-                .complexity(AnimatedExplanationResponse.Complexity.builder()
-                        .time("O(N)")
-                        .space("O(1)")
-                        .explanation("Single-pass traversal with constant memory.")
-                        .build())
-                .result(AnimatedExplanationResponse.Result.builder()
-                        .value("Optimal Result Verified")
-                        .explanation("All constraints and test assertions passed.")
-                        .build())
                 .build();
     }
 }

@@ -16,19 +16,14 @@ import java.util.List;
 public class AnimatedExplanationResponse {
     private String problemTitle;
     private String summary;
+    private String exampleInput;
+    private String exampleOutput;
     private String algorithmName;
     private String algorithmCategory;
 
-    // Ordered execution trace steps
     private List<AnimationStep> steps;
-
-    // Source code associated with algorithm
     private List<AnimationStep.CodeLine> code;
-
-    // Time and Space complexity
     private Complexity complexity;
-
-    // Final result
     private Result result;
 
     @Data

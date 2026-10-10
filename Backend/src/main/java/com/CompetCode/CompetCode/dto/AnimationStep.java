@@ -15,26 +15,23 @@ import java.util.Map;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnimationStep {
-    // Core step metadata
     private int step;
     private String title;
     private String description;
-
-    // Visual configuration
-    // Types: array | hashmap | tree | stack | queue | linkedlist | matrix | pointer | text | highlight
     private String visualType;
     private String visualData;
     private int durationMs;
 
-    // Code execution tracking
-    private Integer line;
-    private List<CodeLine> codeLines;
+    // Real execution dry-run fields
+    private Map<String, Integer> pointers;       // e.g. {"i": 0, "left": 0, "right": 3}
+    private List<Integer> highlights;            // e.g. [0, 1]
+    private Map<String, String> vars;            // e.g. {"target": "9", "map": "{2: 0}"}
+    private List<Integer> codeLines;             // executing 1-based line number(s)
+    private List<String> code;                   // code lines if provided in step
 
-    // Deterministic state snapshot
-    private StepState state;
-
-    // Operations performed at this step
-    private List<Operation> operations;
+    private Integer line;                        // optional single line
+    private StepState state;                     // optional state snapshot
+    private List<Operation> operations;          // optional operations
 
     @Data
     @Builder
@@ -45,9 +42,9 @@ public class AnimationStep {
         private Map<String, Object> variables;
         private List<Object> array;
         private List<Integer> activeIndices;
-        private Map<String, Integer> pointers;        // e.g. {"i": 0, "j": 1, "left": 0, "right": 3}
-        private Map<String, Object> dataStructures;   // e.g. {"map": {"2": 0}}
-        private int[] activeCell;                      // [row, col] for matrix
+        private Map<String, Integer> pointers;
+        private Map<String, Object> dataStructures;
+        private int[] activeCell;
     }
 
     @Data
@@ -56,8 +53,8 @@ public class AnimationStep {
     @AllArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Operation {
-        private String type;        // initialize | lookup | insert | compare | assign | swap | return
-        private String target;      // target variable or structure
+        private String type;
+        private String target;
         private Object value;
         private Object prevValue;
     }
