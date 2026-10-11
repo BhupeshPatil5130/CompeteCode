@@ -218,7 +218,7 @@ export default function ProblemIDE() {
     setComplexityResult(null);
     try {
       const { data } = await problemApi.analyzeComplexity(id, code, language);
-      setComplexityResult(data.analysis);
+      setComplexityResult(data.analysis || data);
     } catch (err) {
       toast.error('Failed to analyze complexity');
       setShowComplexityModal(false);

@@ -49,7 +49,13 @@ public class ProblemController {
     public ResponseEntity<?> analyzeComplexity(
             @PathVariable Long id,
             @RequestBody AnalyzeComplexityRequest request) {
-        return ResponseEntity.ok(problemService.analyzeComplexity(id, request.getCode(), request.getLanguage()));
+        var analysis = problemService.analyzeComplexity(id, request.getCode(), request.getLanguage());
+        return ResponseEntity.ok(Map.of(
+            "analysis", analysis,
+            "timeComplexity", analysis.getTimeComplexity(),
+            "spaceComplexity", analysis.getSpaceComplexity(),
+            "advice", analysis.getAdvice()
+        ));
     }
 
     @GetMapping("/{id}/acceptance-rate")

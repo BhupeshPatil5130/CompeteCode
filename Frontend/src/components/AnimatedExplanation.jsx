@@ -68,12 +68,15 @@ function ArrayVisualizer({ data, highlights = [], pointers = {} }) {
   }
   if (!Array.isArray(arr)) arr = [];
 
+  const hl = Array.isArray(highlights) ? highlights : [];
+  const ptrs = (pointers && typeof pointers === 'object') ? pointers : {};
+
   return (
     <div className="flex flex-col items-center gap-3 w-full py-4">
       <div className="flex gap-2.5 sm:gap-3 flex-wrap justify-center items-end min-h-[100px]">
         {arr.map((item, i) => {
-          const isHighlighted = highlights.includes(i);
-          const activePointers = Object.entries(pointers).filter(([, idx]) => Number(idx) === i).map(([k]) => k);
+          const isHighlighted = hl.includes(i);
+          const activePointers = Object.entries(ptrs).filter(([, idx]) => Number(idx) === i).map(([k]) => k);
 
           return (
             <div key={i} className="flex flex-col items-center gap-1.5">
@@ -122,12 +125,15 @@ function BarsVisualizer({ data, highlights = [], pointers = {} }) {
   if (!Array.isArray(arr)) arr = [];
   const maxVal = Math.max(...arr.map(Number), 1);
 
+  const hl = Array.isArray(highlights) ? highlights : [];
+  const ptrs = (pointers && typeof pointers === 'object') ? pointers : {};
+
   return (
     <div className="flex items-end justify-center gap-3 h-44 w-full py-2">
       {arr.map((val, i) => {
         const heightPct = Math.max(12, (Number(val) / maxVal) * 100);
-        const isHighlighted = highlights.includes(i);
-        const activePointers = Object.entries(pointers).filter(([, idx]) => Number(idx) === i).map(([k]) => k);
+        const isHighlighted = hl.includes(i);
+        const activePointers = Object.entries(ptrs).filter(([, idx]) => Number(idx) === i).map(([k]) => k);
 
         return (
           <div key={i} className="flex flex-col items-center gap-1.5 h-full justify-end">
